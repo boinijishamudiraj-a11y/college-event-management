@@ -3,8 +3,7 @@ const http    = require('node:http');
 const url     = require('node:url');
 const { db, hashPassword } = require('./db');
 const { sign, authMiddleware } = require('./auth');
-
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // ─── MINI ROUTER ─────────────────────────────────────────────────────────────
 function readBody(req) {

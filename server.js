@@ -46,7 +46,8 @@ async function router(req, res) {
   const method   = req.method;
   const query    = parsed.query;
 
-  // ── AUTH ──
+  // ── PUBLIC ROUTES (no auth required) ──
+
   if (method === 'POST' && pathname === '/api/auth/login') {
     const { email, password, role } = await readBody(req);
     if (!email || !password) return err(res, 'Email and password required');
@@ -58,6 +59,7 @@ async function router(req, res) {
     return ok(res, { token, user: safe });
   }
 
+  // FIX: register moved before auth middleware — users need no token to sign up
   if (method === 'POST' && pathname === '/api/auth/register') {
     const { name, email, password, role='student', branch='CSE', year=1 } = await readBody(req);
     if (!name || !email || !password) return err(res, 'Name, email and password required');
@@ -70,10 +72,12 @@ async function router(req, res) {
     return created(res, { token, user });
   }
 
-  // ── All routes below require auth ──
-if (method === 'GET' && pathname === '/api/categories') {
-  return ok(res, db.prepare('SELECT name FROM categories').all().map(r=>r.name));
-}
+  // FIX: single /api/categories route here (removed duplicate after auth check)
+  if (method === 'GET' && pathname === '/api/categories') {
+    return ok(res, db.prepare('SELECT name FROM categories').all().map(r => r.name));
+  }
+
+  // ── AUTH GUARD — all routes below require a valid token ──
   const payload = authMiddleware(req);
   if (!payload) return unauth(res);
   const userId = payload.id;
@@ -86,7 +90,6 @@ if (method === 'GET' && pathname === '/api/categories') {
       ? db.prepare('SELECT * FROM events WHERE category=? ORDER BY date').all(cat)
       : db.prepare('SELECT * FROM events ORDER BY date').all();
 
-    // Attach counts
     const events = rows.map(e => {
       const regCount  = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(e.id).c;
       const waitCount = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='waitlisted'").get(e.id).c;
@@ -200,7 +203,6 @@ if (method === 'GET' && pathname === '/api/categories') {
   // ── AI RECOMMENDATIONS ──
   if (method === 'GET' && pathname === '/api/recommendations') {
     const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
-    // Get categories from user's past registrations
     const history = db.prepare(`
       SELECT e.category FROM registrations r JOIN events e ON r.event_id=e.id
       WHERE r.user_id=? AND r.status='registered'
@@ -209,7 +211,6 @@ if (method === 'GET' && pathname === '/api/categories') {
     const catCount = history.reduce((a, c) => { a[c] = (a[c]||0)+1; return a; }, {});
     const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]);
 
-    // Events not yet registered, matching top categories or same branch
     const registered = db.prepare("SELECT event_id FROM registrations WHERE user_id=? AND status!='cancelled'").all(userId).map(r=>r.event_id);
     const excludeStr = registered.length ? registered.join(',') : '0';
 
@@ -282,14 +283,13 @@ if (method === 'GET' && pathname === '/api/categories') {
     return ok(res, rows);
   }
 
-  if (method === 'GET' && pathname === '/api/categories') {
-    return ok(res, db.prepare('SELECT name FROM categories').all().map(r=>r.name));
-  }
-
   // 404
   notFound(res);
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────
 const server = http.createServer(router);
-server.listen(PORT, () => console.log(`✅  VCE Events API running → http://localhost:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
+console.log("PORT FROM RAILWAY =", PORT);

@@ -78,8 +78,17 @@ async function router(req, res) {
   }
 
   // ── AUTH GUARD — all routes below require a valid token ──
-  const payload = authMiddleware(req);
-  if (!payload) return unauth(res);
+let payload;
+
+try {
+  payload = authMiddleware(req);
+} catch (e) {
+  return unauth(res);
+}
+
+if (!payload || !payload.id || !payload.role) {
+  return unauth(res);
+}
   const userId = payload.id;
   const userRole = payload.role;
 
@@ -202,37 +211,67 @@ async function router(req, res) {
 
   // ── AI RECOMMENDATIONS ──
   if (method === 'GET' && pathname === '/api/recommendations') {
-    const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
-    const history = db.prepare(`
-      SELECT e.category FROM registrations r JOIN events e ON r.event_id=e.id
-      WHERE r.user_id=? AND r.status='registered'
-    `).all(userId).map(r => r.category);
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
 
-    const catCount = history.reduce((a, c) => { a[c] = (a[c]||0)+1; return a; }, {});
-    const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]);
+  const history = db.prepare(`
+    SELECT e.category
+    FROM registrations r
+    JOIN events e ON r.event_id=e.id
+    WHERE r.user_id=? AND r.status='registered'
+  `).all(userId).map(r => r.category);
 
-    const registered = db.prepare("SELECT event_id FROM registrations WHERE user_id=? AND status!='cancelled'").all(userId).map(r=>r.event_id);
-    const excludeStr = registered.length ? registered.join(',') : '0';
+  const catCount = history.reduce((a, c) => {
+    a[c] = (a[c] || 0) + 1;
+    return a;
+  }, {});
 
-    let recs = db.prepare(`
+  const topCats = Object.entries(catCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(x => x[0]);
+
+  const registered = db.prepare(`
+    SELECT event_id FROM registrations
+    WHERE user_id=? AND status!='cancelled'
+  `).all(userId).map(r => r.event_id);
+
+  const excludeIds = registered.length ? registered : [-1];
+
+  let recs;
+
+  if (topCats.length === 0) {
+    recs = db.prepare(`
       SELECT * FROM events
-      WHERE id NOT IN (${excludeStr})
-      AND (category IN (${topCats.map(()=>'?').join(',')}) OR branch=? OR branch='All')
+      WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})
       ORDER BY date LIMIT 5
-    `).all(...topCats, user.branch);
-
-    if (recs.length === 0) {
-      recs = db.prepare(`SELECT * FROM events WHERE id NOT IN (${excludeStr}) ORDER BY date LIMIT 3`).all();
-    }
-
-    recs = recs.map(e => ({
-      ...e,
-      registered_count: db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(e.id).c,
-      reason: topCats.includes(e.category) ? `Based on your interest in ${e.category}` : `Matches your ${user.branch} branch`
-    }));
-
-    return ok(res, { recommendations: recs, top_categories: topCats, user_branch: user.branch });
+    `).all(...excludeIds);
+  } else {
+    recs = db.prepare(`
+      SELECT * FROM events
+      WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})
+      AND (category IN (${topCats.map(() => '?').join(',')}) OR branch=? OR branch='All')
+      ORDER BY date LIMIT 5
+    `).all(...excludeIds, ...topCats, user.branch);
   }
+
+  recs = recs.map(e => ({
+    ...e,
+    registered_count: db.prepare(`
+      SELECT COUNT(*) as c
+      FROM registrations
+      WHERE event_id=? AND status='registered'
+    `).get(e.id).c,
+    reason: topCats.includes(e.category)
+      ? `Based on your interest in ${e.category}`
+      : `Matches your ${user.branch} branch`
+  }));
+
+  return ok(res, {
+    recommendations: recs,
+    top_categories: topCats,
+    user_branch: user.branch
+  });
+}
 
   // ── ORGANIZER / ADMIN ──
   if (method === 'GET' && pathname === '/api/admin/registrations') {

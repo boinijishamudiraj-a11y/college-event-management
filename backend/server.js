@@ -1,16 +1,17 @@
 'use strict';
-const http    = require('node:http');
-const url     = require('node:url');
+const http   = require('node:http');
+const url    = require('node:url');
+const crypto = require('node:crypto');
 const { db, hashPassword } = require('./db');
-const { sign, authMiddleware } = require('./auth');
+const { sign, verify, authMiddleware } = require('./auth');
 
 const PORT = process.env.PORT || 3001;
 
-// ─── MINI ROUTER ─────────────────────────────────────────────────────────────
+// ─── MINI ROUTER HELPERS ─────────────────────────────────────────────────────
 function readBody(req) {
   return new Promise((res, rej) => {
     let data = '';
-    req.on('data', c => data += c);
+    req.on('data', c => (data += c));
     req.on('end', () => {
       try { res(data ? JSON.parse(data) : {}); }
       catch { res({}); }
@@ -22,96 +23,119 @@ function readBody(req) {
 function send(res, status, data) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
-    'Content-Type':  'application/json',
+    'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
-    'Access-Control-Allow-Origin':  '*',
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
   });
   res.end(body);
 }
 
-function ok(res, data)  { send(res, 200, data); }
-function created(res, d){ send(res, 201, d); }
-function err(res, msg, status=400) { send(res, status, { error: msg }); }
-function unauth(res)    { err(res, 'Unauthorized', 401); }
-function notFound(res)  { err(res, 'Not found', 404); }
+const ok      = (res, d)        => send(res, 200, d);
+const created = (res, d)        => send(res, 201, d);
+const err     = (res, msg, s=400) => send(res, s, { error: msg });
+const unauth  = res             => err(res, 'Unauthorized', 401);
+const notFound = res            => err(res, 'Not found', 404);
 
+// ─── SIGN SHORT-LIVED QR TOKENS ──────────────────────────────────────────────
+const QR_SECRET = process.env.QR_SECRET || 'vce_qr_secret_2025';
 
-// ─── ROUTES ──────────────────────────────────────────────────────────────────
+function signQR(eventId) {
+  // Token encodes event id + today's date (UTC) so it's only valid today
+  const today = new Date().toISOString().slice(0, 10);
+  const payload = `${eventId}:${today}`;
+  const sig = crypto.createHmac('sha256', QR_SECRET).update(payload).digest('hex').slice(0, 16);
+  return `${payload}:${sig}`;
+}
+
+function verifyQR(token, eventId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const expected = signQR(eventId); // will use today internally
+  // constant-time compare
+  if (token.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+}
+
+// ─── MAIN ROUTER ─────────────────────────────────────────────────────────────
 async function router(req, res) {
-  // CORS preflight
   if (req.method === 'OPTIONS') { send(res, 204, {}); return; }
 
   const parsed   = url.parse(req.url, true);
   const pathname = parsed.pathname;
   const method   = req.method;
   const query    = parsed.query;
+
   if (method === 'GET' && pathname === '/') {
-    return ok(res, { message: 'Backend is running' });
+    return ok(res, { message: 'VCE Events API running ✅' });
   }
 
-  // ── AUTH ──
+  // ── AUTH ──────────────────────────────────────────────────────────────────
   if (method === 'POST' && pathname === '/api/auth/login') {
     const { email, password, role } = await readBody(req);
     if (!email || !password) return err(res, 'Email and password required');
     const hashed = hashPassword(password);
-    const user = db.prepare('SELECT * FROM users WHERE email=? AND password=? AND role=?').get(email, hashed, role || 'student');
-    if (!user) return err(res, 'Invalid credentials', 401);
-    const token = sign({ id: user.id, role: user.role, exp: Date.now() + 24*60*60*1000 });
+    const user = db
+      .prepare('SELECT * FROM users WHERE email=? AND password=? AND role=?')
+      .get(email, hashed, role || 'student');
+    if (!user) return err(res, 'Invalid credentials or wrong role selected', 401);
+    const token = sign({ id: user.id, role: user.role, exp: Date.now() + 24 * 60 * 60 * 1000 });
     const { password: _, ...safe } = user;
     return ok(res, { token, user: safe });
   }
 
   if (method === 'POST' && pathname === '/api/auth/register') {
-    const { name, email, password, role='student', branch='CSE', year=1 } = await readBody(req);
-    if (!name || !email || !password) return err(res, 'Name, email and password required');
+    const { name, email, password, role = 'student', branch = 'CSE', year = 1 } = await readBody(req);
+    if (!name || !email || !password) return err(res, 'Name, email and password are required');
+    if (password.length < 6) return err(res, 'Password must be at least 6 characters');
     const existing = db.prepare('SELECT id FROM users WHERE email=?').get(email);
-    if (existing) return err(res, 'Email already registered');
+    if (existing) return err(res, 'This email is already registered');
     const hashed = hashPassword(password);
-    const result = db.prepare('INSERT INTO users(name,email,password,role,branch,year) VALUES(?,?,?,?,?,?)').run(name, email, hashed, role, branch, year);
-    const user = db.prepare('SELECT id,name,email,role,branch,year FROM users WHERE id=?').get(result.lastInsertRowid);
-    const token = sign({ id: user.id, role: user.role, exp: Date.now() + 24*60*60*1000 });
-    return created(res, { token, user });
+    const result = db
+      .prepare('INSERT INTO users(name,email,password,role,branch,year) VALUES(?,?,?,?,?,?)')
+      .run(name, email, hashed, role, branch, year);
+    const newUser = db
+      .prepare('SELECT id,name,email,role,branch,year,created_at FROM users WHERE id=?')
+      .get(result.lastInsertRowid);
+    const token = sign({ id: newUser.id, role: newUser.role, exp: Date.now() + 24 * 60 * 60 * 1000 });
+    return created(res, { token, user: newUser });
   }
 
-  // ── All routes below require auth ──
-  
-let payload = null;
-let userId = null;
-let userRole = null;
-
-const publicRoutes = [
-  '/api/auth/login',
-  '/api/auth/register',
-  '/'
-];
-
-if (!publicRoutes.includes(pathname)) {
-  payload = authMiddleware(req);
+  // ── AUTH GUARD ────────────────────────────────────────────────────────────
+  const payload = authMiddleware(req);
   if (!payload) return unauth(res);
+  const userId   = payload.id;
+  const userRole = payload.role;
 
-  userId = payload.id;
-  userRole = payload.role;
-}
+  // ── GET /api/me ── fresh user data for session restore ───────────────────
+  if (method === 'GET' && pathname === '/api/me') {
+    const user = db
+      .prepare('SELECT id,name,email,role,branch,year FROM users WHERE id=?')
+      .get(userId);
+    if (!user) return err(res, 'User not found', 404);
+    return ok(res, user);
+  }
 
-  // ── EVENTS ──
+  // ── EVENTS ───────────────────────────────────────────────────────────────
   if (method === 'GET' && pathname === '/api/events') {
     const cat  = query.category;
     const rows = cat && cat !== 'All'
       ? db.prepare('SELECT * FROM events WHERE category=? ORDER BY date').all(cat)
       : db.prepare('SELECT * FROM events ORDER BY date').all();
 
-    // Attach counts
     const events = rows.map(e => {
       const regCount  = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(e.id).c;
       const waitCount = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='waitlisted'").get(e.id).c;
-      const avgRating = db.prepare('SELECT AVG(rating) as avg FROM feedback WHERE event_id=?').get(e.id).avg;
-      const myReg = userId
-  ? db.prepare('SELECT status,attended FROM registrations WHERE user_id=? AND event_id=?')
-      .get(userId, e.id)
-  : null;
-      return { ...e, registered_count: regCount, waitlist_count: waitCount, avg_rating: avgRating ? +avgRating.toFixed(1) : null, my_status: myReg?.status || null, my_attended: myReg?.attended || 0 };
+      const avgRow    = db.prepare('SELECT AVG(rating) as avg FROM feedback WHERE event_id=?').get(e.id);
+      const myReg     = db.prepare('SELECT status,attended FROM registrations WHERE user_id=? AND event_id=?').get(userId, e.id);
+      return {
+        ...e,
+        registered_count: regCount,
+        waitlist_count: waitCount,
+        avg_rating: avgRow.avg ? +avgRow.avg.toFixed(1) : null,
+        my_status: myReg?.status || null,
+        my_attended: myReg?.attended || 0,
+      };
     });
     return ok(res, events);
   }
@@ -122,19 +146,33 @@ if (!publicRoutes.includes(pathname)) {
     if (!e) return notFound(res);
     const regCount  = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(eid).c;
     const waitCount = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='waitlisted'").get(eid).c;
-    const feedbacks = db.prepare('SELECT f.*,u.name,u.branch FROM feedback f JOIN users u ON f.user_id=u.id WHERE f.event_id=?').all(eid);
-    const avgRating = db.prepare('SELECT AVG(rating) as avg FROM feedback WHERE event_id=?').get(eid).avg;
-    return ok(res, { ...e, registered_count: regCount, waitlist_count: waitCount, feedbacks, avg_rating: avgRating ? +avgRating.toFixed(1) : null });
+    const feedbacks = db.prepare('SELECT f.*,u.name as user_name,u.branch FROM feedback f JOIN users u ON f.user_id=u.id WHERE f.event_id=?').all(eid);
+    const avgRow    = db.prepare('SELECT AVG(rating) as avg FROM feedback WHERE event_id=?').get(eid);
+    return ok(res, { ...e, registered_count: regCount, waitlist_count: waitCount, feedbacks, avg_rating: avgRow.avg ? +avgRow.avg.toFixed(1) : null });
   }
 
   if (method === 'POST' && pathname === '/api/events') {
     if (userRole !== 'organizer' && userRole !== 'admin') return err(res, 'Forbidden', 403);
-    const { title, description, category, date, time, venue, capacity, branch='All' } = await readBody(req);
+    const { title, description, category, date, time, venue, capacity, branch = 'All' } = await readBody(req);
     if (!title || !category || !date || !venue || !capacity) return err(res, 'Missing required fields');
-    const r = db.prepare('INSERT INTO events(title,description,category,date,time,venue,capacity,branch,organizer_id) VALUES(?,?,?,?,?,?,?,?,?)')
-      .run(title, description||'', category, date, time||'', venue, +capacity, branch, userId);
+    const r = db
+      .prepare('INSERT INTO events(title,description,category,date,time,venue,capacity,branch,organizer_id) VALUES(?,?,?,?,?,?,?,?,?)')
+      .run(title, description || '', category, date, time || '', venue, +capacity, branch, userId);
     const event = db.prepare('SELECT * FROM events WHERE id=?').get(r.lastInsertRowid);
     return created(res, event);
+  }
+
+  if (method === 'PUT' && pathname.match(/^\/api\/events\/\d+$/)) {
+    if (userRole !== 'organizer' && userRole !== 'admin') return err(res, 'Forbidden', 403);
+    const eid = +pathname.split('/')[3];
+    const ev  = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
+    if (!ev) return notFound(res);
+    const { title, description, category, date, time, venue, capacity, branch = 'All' } = await readBody(req);
+    if (!title || !category || !date || !venue || !capacity) return err(res, 'Missing required fields');
+    db.prepare('UPDATE events SET title=?,description=?,category=?,date=?,time=?,venue=?,capacity=?,branch=? WHERE id=?')
+      .run(title, description || '', category, date, time || '', venue, +capacity, branch, eid);
+    const updated = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
+    return ok(res, updated);
   }
 
   if (method === 'DELETE' && pathname.match(/^\/api\/events\/\d+$/)) {
@@ -146,9 +184,9 @@ if (!publicRoutes.includes(pathname)) {
     return ok(res, { message: 'Event deleted' });
   }
 
-  // ── REGISTRATIONS ──
+  // ── REGISTRATIONS ─────────────────────────────────────────────────────────
   if (method === 'POST' && pathname.match(/^\/api\/events\/\d+\/register$/)) {
-    const eid = +pathname.split('/')[3];
+    const eid   = +pathname.split('/')[3];
     const event = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
     if (!event) return notFound(res);
 
@@ -156,14 +194,17 @@ if (!publicRoutes.includes(pathname)) {
     if (existing && existing.status !== 'cancelled') return err(res, 'Already registered or waitlisted');
 
     const regCount = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(eid).c;
-    const status = regCount >= event.capacity ? 'waitlisted' : 'registered';
+    const status   = regCount >= event.capacity ? 'waitlisted' : 'registered';
 
     if (existing) {
       db.prepare("UPDATE registrations SET status=?,attended=0 WHERE user_id=? AND event_id=?").run(status, userId, eid);
     } else {
       db.prepare('INSERT INTO registrations(user_id,event_id,status) VALUES(?,?,?)').run(userId, eid, status);
     }
-    return created(res, { status, message: status === 'waitlisted' ? 'Added to waitlist' : 'Registered successfully! Confirmation email sent.' });
+    return created(res, {
+      status,
+      message: status === 'waitlisted' ? 'Added to waitlist' : 'Registered successfully! Confirmation email sent.',
+    });
   }
 
   if (method === 'DELETE' && pathname.match(/^\/api\/events\/\d+\/register$/)) {
@@ -171,26 +212,56 @@ if (!publicRoutes.includes(pathname)) {
     const reg = db.prepare("SELECT * FROM registrations WHERE user_id=? AND event_id=? AND status='registered'").get(userId, eid);
     if (!reg) return err(res, 'Registration not found');
     db.prepare("UPDATE registrations SET status='cancelled' WHERE user_id=? AND event_id=?").run(userId, eid);
-
-    // Promote waitlisted user
+    // Promote next waitlisted
     const next = db.prepare("SELECT * FROM registrations WHERE event_id=? AND status='waitlisted' ORDER BY created_at LIMIT 1").get(eid);
-    if (next) {
-      db.prepare("UPDATE registrations SET status='registered' WHERE id=?").run(next.id);
-    }
-    return ok(res, { message: 'Registration cancelled' + (next ? '. Waitlisted student promoted.' : '') });
+    if (next) db.prepare("UPDATE registrations SET status='registered' WHERE id=?").run(next.id);
+    return ok(res, { message: 'Registration cancelled' + (next ? '. Next waitlisted student promoted.' : '') });
   }
 
-  // ── ATTENDANCE (QR mark) ──
-  if (method === 'POST' && pathname.match(/^\/api\/events\/\d+\/attend$/)) {
+  // ── QR TOKEN (organizer/admin generate, student scans) ───────────────────
+  // GET /api/events/:id/qr-token  →  returns today's token for that event
+  if (method === 'GET' && pathname.match(/^\/api\/events\/\d+\/qr-token$/)) {
+    if (userRole !== 'organizer' && userRole !== 'admin') return err(res, 'Forbidden', 403);
     const eid = +pathname.split('/')[3];
-    const reg = db.prepare("SELECT * FROM registrations WHERE user_id=? AND event_id=? AND status='registered'").get(userId, eid);
-    if (!reg) return err(res, 'No active registration found');
-    if (reg.attended) return err(res, 'Already marked as attended');
-    db.prepare('UPDATE registrations SET attended=1 WHERE user_id=? AND event_id=?').run(userId, eid);
-    return ok(res, { message: 'Attendance marked successfully!' });
+    const ev  = db.prepare('SELECT id,title,date FROM events WHERE id=?').get(eid);
+    if (!ev) return notFound(res);
+    const token = signQR(eid);
+    return ok(res, { token, event_id: eid, valid_date: new Date().toISOString().slice(0, 10) });
   }
 
-  // ── MY REGISTRATIONS ──
+  // ── ATTENDANCE ────────────────────────────────────────────────────────────
+  // POST /api/events/:id/attend  { qr_token: "..." }
+  // Students call this after scanning the QR. Checks:
+  //   1. User has an active registration
+  //   2. QR token is valid (implicitly checks today == event date OR token date)
+  //   3. Not already attended
+  if (method === 'POST' && pathname.match(/^\/api\/events\/\d+\/attend$/)) {
+    const eid   = +pathname.split('/')[3];
+    const event = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
+    if (!event) return notFound(res);
+
+    // Date check: event must be today (comparing date strings YYYY-MM-DD)
+    const today     = new Date().toISOString().slice(0, 10);
+    const eventDate = event.date; // already stored as YYYY-MM-DD
+
+    if (eventDate !== today) {
+      return err(res, `Attendance can only be marked on the event date (${eventDate}). Today is ${today}.`);
+    }
+
+    // QR token validation
+    const { qr_token } = await readBody(req);
+    if (!qr_token) return err(res, 'QR token is required');
+    if (!verifyQR(qr_token, eid)) return err(res, 'Invalid or expired QR code. Please scan again.');
+
+    const reg = db.prepare("SELECT * FROM registrations WHERE user_id=? AND event_id=? AND status='registered'").get(userId, eid);
+    if (!reg) return err(res, 'You are not registered for this event');
+    if (reg.attended) return err(res, 'Attendance already marked for this event');
+
+    db.prepare('UPDATE registrations SET attended=1 WHERE user_id=? AND event_id=?').run(userId, eid);
+    return ok(res, { message: '✅ Attendance marked successfully!' });
+  }
+
+  // ── MY REGISTRATIONS ──────────────────────────────────────────────────────
   if (method === 'GET' && pathname === '/api/my/registrations') {
     const rows = db.prepare(`
       SELECT r.*, e.title, e.date, e.time, e.venue, e.category,
@@ -203,87 +274,74 @@ if (!publicRoutes.includes(pathname)) {
     return ok(res, rows);
   }
 
-  // ── FEEDBACK ──
+  // ── FEEDBACK ──────────────────────────────────────────────────────────────
   if (method === 'POST' && pathname.match(/^\/api\/events\/\d+\/feedback$/)) {
     const eid = +pathname.split('/')[3];
     const { rating, comment } = await readBody(req);
-    if (!rating || rating < 1 || rating > 5) return err(res, 'Rating must be 1-5');
-    const attended = db.prepare("SELECT attended FROM registrations WHERE user_id=? AND event_id=? AND status='registered'").get(userId, eid);
-    if (!attended || !attended.attended) return err(res, 'You must attend the event before giving feedback');
+    if (!rating || rating < 1 || rating > 5) return err(res, 'Rating must be between 1 and 5');
+    const attended = db
+      .prepare("SELECT attended FROM registrations WHERE user_id=? AND event_id=? AND status='registered'")
+      .get(userId, eid);
+    if (!attended?.attended) return err(res, 'You must attend the event before giving feedback');
     const existing = db.prepare('SELECT id FROM feedback WHERE user_id=? AND event_id=?').get(userId, eid);
-    if (existing) return err(res, 'Feedback already submitted');
-    db.prepare('INSERT INTO feedback(user_id,event_id,rating,comment) VALUES(?,?,?,?)').run(userId, eid, rating, comment||'');
+    if (existing) return err(res, 'Feedback already submitted for this event');
+    db.prepare('INSERT INTO feedback(user_id,event_id,rating,comment) VALUES(?,?,?,?)').run(userId, eid, rating, comment || '');
     return created(res, { message: 'Feedback submitted! Thank you.' });
   }
 
-  // ── AI RECOMMENDATIONS ──
+  // ── AI RECOMMENDATIONS ────────────────────────────────────────────────────
   if (method === 'GET' && pathname === '/api/recommendations') {
     const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
-    // Get categories from user's past registrations
-    const history = db.prepare(`
-      SELECT e.category FROM registrations r JOIN events e ON r.event_id=e.id
-      WHERE r.user_id=? AND r.status='registered'
-    `).all(userId).map(r => r.category);
+    const history = db
+      .prepare(`SELECT e.category FROM registrations r JOIN events e ON r.event_id=e.id WHERE r.user_id=? AND r.status='registered'`)
+      .all(userId)
+      .map(r => r.category);
 
-    const catCount = history.reduce((a, c) => {
-  a[c] = (a[c] || 0) + 1;
-  return a;
-}, {});
+    const catCount = history.reduce((a, c) => { a[c] = (a[c] || 0) + 1; return a; }, {});
+    const topCats  = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]);
 
-let topCats = Object.entries(catCount)
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 2)
-  .map(x => x[0]);
+    const registered  = db.prepare("SELECT event_id FROM registrations WHERE user_id=? AND status!='cancelled'").all(userId).map(r=>r.event_id);
+    const excludeStr  = registered.length ? registered.join(',') : '0';
 
-// FIX: fallback when no history exists
-if (topCats.length === 0) {
-  topCats = []; // safest option (no invalid SQL)
-}
-
-    // Events not yet registered, matching top categories or same branch
-    const registered = db.prepare("SELECT event_id FROM registrations WHERE user_id=? AND status!='cancelled'").all(userId).map(r=>r.event_id);
-    const excludeStr = registered.length ? registered.join(',') : '0';
-
+    const today = new Date().toISOString().slice(0, 10);
     const hasCats = topCats.length > 0;
 
-let recQuery = `
-  SELECT * FROM events
-  WHERE id NOT IN (${excludeStr})
-  AND (
-    ${hasCats ? `category IN (${topCats.map(()=>'?').join(',')}) OR` : ''}
-    branch=? OR branch='All'
-  )
-  ORDER BY date LIMIT 5
-`;
-
-let params = hasCats
-  ? [...topCats, user.branch]
-  : [user.branch];
-
-let recs = db.prepare(recQuery).all(...params);
+    let recs;
+    if (hasCats) {
+      recs = db.prepare(`
+        SELECT * FROM events
+        WHERE id NOT IN (${excludeStr}) AND date >= ?
+        AND (category IN (${topCats.map(()=>'?').join(',')}) OR branch=? OR branch='All')
+        ORDER BY date LIMIT 5
+      `).all(today, ...topCats, user.branch);
+    } else {
+      recs = db.prepare(`
+        SELECT * FROM events WHERE id NOT IN (${excludeStr}) AND date >= ? AND (branch=? OR branch='All') ORDER BY date LIMIT 5
+      `).all(today, user.branch);
+    }
 
     if (recs.length === 0) {
-      recs = db.prepare(`SELECT * FROM events WHERE id NOT IN (${excludeStr}) ORDER BY date LIMIT 3`).all();
+      recs = db.prepare(`SELECT * FROM events WHERE id NOT IN (${excludeStr}) AND date >= ? ORDER BY date LIMIT 3`).all(today);
     }
 
     recs = recs.map(e => ({
       ...e,
       registered_count: db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(e.id).c,
-      reason: topCats.includes(e.category) ? `Based on your interest in ${e.category}` : `Matches your ${user.branch} branch`
+      reason: topCats.includes(e.category) ? `Based on your interest in ${e.category}` : `Matches your ${user.branch} branch`,
     }));
 
     return ok(res, { recommendations: recs, top_categories: topCats, user_branch: user.branch });
   }
 
-  // ── ORGANIZER / ADMIN ──
+  // ── ORGANIZER / ADMIN ─────────────────────────────────────────────────────
   if (method === 'GET' && pathname === '/api/admin/registrations') {
     if (userRole !== 'organizer' && userRole !== 'admin') return err(res, 'Forbidden', 403);
     const rows = db.prepare(`
       SELECT r.*, u.name as user_name, u.email, u.branch, u.year,
-             e.title as event_title, e.date, e.category
+             e.title as event_title, e.date, e.category, e.id as event_id
       FROM registrations r
-      JOIN users u ON r.user_id=u.id
-      JOIN events e ON r.event_id=e.id
+      JOIN users u ON r.user_id = u.id
+      JOIN events e ON r.event_id = e.id
       WHERE r.status != 'cancelled'
       ORDER BY r.created_at DESC
     `).all();
@@ -292,20 +350,23 @@ let recs = db.prepare(recQuery).all(...params);
 
   if (method === 'GET' && pathname === '/api/admin/analytics') {
     if (userRole !== 'admin') return err(res, 'Forbidden', 403);
-    const totalEvents  = db.prepare('SELECT COUNT(*) as c FROM events').get().c;
-    const totalUsers   = db.prepare("SELECT COUNT(*) as c FROM users WHERE role='student'").get().c;
-    const totalRegs    = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE status='registered'").get().c;
-    const totalAttend  = db.prepare('SELECT COUNT(*) as c FROM registrations WHERE attended=1').get().c;
-    const totalFeedback= db.prepare('SELECT COUNT(*) as c FROM feedback').get().c;
-    const avgRating    = db.prepare('SELECT AVG(rating) as avg FROM feedback').get().avg;
-    const byCategory   = db.prepare(`SELECT e.category, COUNT(*) as event_count,
-      SUM((SELECT COUNT(*) FROM registrations r WHERE r.event_id=e.id AND r.status='registered')) as reg_count
-      FROM events e GROUP BY e.category`).all();
-    const topEvents    = db.prepare(`
+    const totalEvents   = db.prepare('SELECT COUNT(*) as c FROM events').get().c;
+    const totalUsers    = db.prepare("SELECT COUNT(*) as c FROM users WHERE role='student'").get().c;
+    const totalRegs     = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE status='registered'").get().c;
+    const totalAttend   = db.prepare('SELECT COUNT(*) as c FROM registrations WHERE attended=1').get().c;
+    const totalFeedback = db.prepare('SELECT COUNT(*) as c FROM feedback').get().c;
+    const avgRow        = db.prepare('SELECT AVG(rating) as avg FROM feedback').get();
+    const byCategory    = db.prepare(`
+      SELECT e.category, COUNT(*) as event_count,
+        SUM((SELECT COUNT(*) FROM registrations r WHERE r.event_id=e.id AND r.status='registered')) as reg_count
+      FROM events e GROUP BY e.category
+    `).all();
+    const topEvents = db.prepare(`
       SELECT e.title, COUNT(*) as reg_count FROM registrations r
       JOIN events e ON r.event_id=e.id WHERE r.status='registered'
-      GROUP BY r.event_id ORDER BY reg_count DESC LIMIT 5`).all();
-    return ok(res, { totalEvents, totalUsers, totalRegs, totalAttend, totalFeedback, avgRating: avgRating ? +avgRating.toFixed(1):0, byCategory, topEvents });
+      GROUP BY r.event_id ORDER BY reg_count DESC LIMIT 5
+    `).all();
+    return ok(res, { totalEvents, totalUsers, totalRegs, totalAttend, totalFeedback, avgRating: avgRow.avg ? +avgRow.avg.toFixed(1) : 0, byCategory, topEvents });
   }
 
   if (method === 'GET' && pathname === '/api/admin/users') {
@@ -325,13 +386,12 @@ let recs = db.prepare(recQuery).all(...params);
   }
 
   if (method === 'GET' && pathname === '/api/categories') {
-    return ok(res, db.prepare('SELECT name FROM categories').all().map(r=>r.name));
+    return ok(res, db.prepare('SELECT name FROM categories').all().map(r => r.name));
   }
 
-  // 404
   notFound(res);
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────
 const server = http.createServer(router);
-server.listen(PORT, () => console.log(`✅  VCE Events API running → http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`✅  VCE Events API → http://localhost:${PORT}`));

@@ -28,4 +28,8 @@ function authMiddleware(req) {
   return verify(token);
 }
 
+
 module.exports = { sign, verify, authMiddleware };
+
+
+

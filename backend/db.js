@@ -79,4 +79,8 @@ const insertFeedback = db.prepare(`INSERT OR IGNORE INTO feedback(user_id,event_
 const insertCat = db.prepare(`INSERT OR IGNORE INTO categories(name) VALUES(?)`);
 ['Workshop','Seminar','Fest','Competition','Cultural','Sports'].forEach(c => insertCat.run(c));
 
+<<<<<<< HEAD
 module.exports = { db, hashPassword };
+=======
+module.exports = { db, hashPassword };
+>>>>>>> 3f28495 (save remaining changes)

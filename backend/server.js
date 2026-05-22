@@ -4,7 +4,11 @@ const url     = require('node:url');
 const { db, hashPassword } = require('./db');
 const { sign, authMiddleware } = require('./auth');
 
+<<<<<<< HEAD
 const PORT = 3001;
+=======
+const PORT = process.env.PORT || 3001;
+>>>>>>> 4d718f1 (fixed recommendations bug)
 
 // ─── MINI ROUTER ─────────────────────────────────────────────────────────────
 function readBody(req) {
@@ -37,6 +41,10 @@ function err(res, msg, status=400) { send(res, status, { error: msg }); }
 function unauth(res)    { err(res, 'Unauthorized', 401); }
 function notFound(res)  { err(res, 'Not found', 404); }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4d718f1 (fixed recommendations bug)
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
 async function router(req, res) {
   // CORS preflight
@@ -46,6 +54,12 @@ async function router(req, res) {
   const pathname = parsed.pathname;
   const method   = req.method;
   const query    = parsed.query;
+<<<<<<< HEAD
+=======
+  if (method === 'GET' && pathname === '/') {
+    return ok(res, { message: 'Backend is running' });
+  }
+>>>>>>> 4d718f1 (fixed recommendations bug)
 
   // ── AUTH ──
   if (method === 'POST' && pathname === '/api/auth/login') {
@@ -72,10 +86,31 @@ async function router(req, res) {
   }
 
   // ── All routes below require auth ──
+<<<<<<< HEAD
   const payload = authMiddleware(req);
   if (!payload) return unauth(res);
   const userId = payload.id;
   const userRole = payload.role;
+=======
+  
+let payload = null;
+let userId = null;
+let userRole = null;
+
+const publicRoutes = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/'
+];
+
+if (!publicRoutes.includes(pathname)) {
+  payload = authMiddleware(req);
+  if (!payload) return unauth(res);
+
+  userId = payload.id;
+  userRole = payload.role;
+}
+>>>>>>> 4d718f1 (fixed recommendations bug)
 
   // ── EVENTS ──
   if (method === 'GET' && pathname === '/api/events') {
@@ -89,7 +124,14 @@ async function router(req, res) {
       const regCount  = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(e.id).c;
       const waitCount = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='waitlisted'").get(e.id).c;
       const avgRating = db.prepare('SELECT AVG(rating) as avg FROM feedback WHERE event_id=?').get(e.id).avg;
+<<<<<<< HEAD
       const myReg     = db.prepare('SELECT status,attended FROM registrations WHERE user_id=? AND event_id=?').get(userId, e.id);
+=======
+      const myReg = userId
+  ? db.prepare('SELECT status,attended FROM registrations WHERE user_id=? AND event_id=?')
+      .get(userId, e.id)
+  : null;
+>>>>>>> 4d718f1 (fixed recommendations bug)
       return { ...e, registered_count: regCount, waitlist_count: waitCount, avg_rating: avgRating ? +avgRating.toFixed(1) : null, my_status: myReg?.status || null, my_attended: myReg?.attended || 0 };
     });
     return ok(res, events);
@@ -204,19 +246,56 @@ async function router(req, res) {
       WHERE r.user_id=? AND r.status='registered'
     `).all(userId).map(r => r.category);
 
+<<<<<<< HEAD
     const catCount = history.reduce((a, c) => { a[c] = (a[c]||0)+1; return a; }, {});
     const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]);
+=======
+    const catCount = history.reduce((a, c) => {
+  a[c] = (a[c] || 0) + 1;
+  return a;
+}, {});
+
+let topCats = Object.entries(catCount)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 2)
+  .map(x => x[0]);
+
+// FIX: fallback when no history exists
+if (topCats.length === 0) {
+  topCats = []; // safest option (no invalid SQL)
+}
+>>>>>>> 4d718f1 (fixed recommendations bug)
 
     // Events not yet registered, matching top categories or same branch
     const registered = db.prepare("SELECT event_id FROM registrations WHERE user_id=? AND status!='cancelled'").all(userId).map(r=>r.event_id);
     const excludeStr = registered.length ? registered.join(',') : '0';
 
+<<<<<<< HEAD
     let recs = db.prepare(`
       SELECT * FROM events
       WHERE id NOT IN (${excludeStr})
       AND (category IN (${topCats.map(()=>'?').join(',')}) OR branch=? OR branch='All')
       ORDER BY date LIMIT 5
     `).all(...topCats, user.branch);
+=======
+    const hasCats = topCats.length > 0;
+
+let recQuery = `
+  SELECT * FROM events
+  WHERE id NOT IN (${excludeStr})
+  AND (
+    ${hasCats ? `category IN (${topCats.map(()=>'?').join(',')}) OR` : ''}
+    branch=? OR branch='All'
+  )
+  ORDER BY date LIMIT 5
+`;
+
+let params = hasCats
+  ? [...topCats, user.branch]
+  : [user.branch];
+
+let recs = db.prepare(recQuery).all(...params);
+>>>>>>> 4d718f1 (fixed recommendations bug)
 
     if (recs.length === 0) {
       recs = db.prepare(`SELECT * FROM events WHERE id NOT IN (${excludeStr}) ORDER BY date LIMIT 3`).all();

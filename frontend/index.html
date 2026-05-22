@@ -164,11 +164,22 @@ tr:hover td{background:var(--bg)}
 /* Rec pill */
 .recpill{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--pul),#ede9fe);color:var(--purple);border:1px solid #c4b5fd;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:6px}
 
-/* QR */
-.qrbox{text-align:center;padding:28px 20px}
-.qrcode{width:175px;height:175px;margin:0 auto 14px;background:#fff;border:3px solid var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.qrinner{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:138px;height:138px}
-.qrcell{border-radius:1px}
+/* QR Display (organizer side) */
+.qr-display-box{text-align:center;padding:24px 20px}
+.qr-canvas-wrap{width:200px;height:200px;margin:0 auto 16px;background:#fff;border:3px solid #1e293b;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+canvas#qrCanvas{display:block}
+.qr-validity{display:inline-flex;align-items:center;gap:6px;background:var(--gl);border:1px solid #bbf7d0;color:var(--green);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:10px}
+
+/* QR Scanner (student side) */
+.scanner-wrap{position:relative;width:100%;max-width:300px;margin:0 auto;border-radius:12px;overflow:hidden;background:#000}
+#scanVideo{width:100%;display:block;border-radius:12px}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frame{width:180px;height:180px;border:3px solid #22c55e;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);position:relative}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:28px;height:28px;border-color:#22c55e;border-style:solid}
+.scan-frame::before{top:-3px;left:-3px;border-width:4px 0 0 4px;border-radius:4px 0 0 0}
+.scan-frame::after{bottom:-3px;right:-3px;border-width:0 4px 4px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#22c55e,transparent);animation:scanAnim 2s ease-in-out infinite}
+@keyframes scanAnim{0%,100%{top:10px}50%{top:calc(100% - 12px)}}
 
 /* Notif */
 .notif{position:fixed;top:16px;right:16px;background:var(--green);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;transform:translateX(240px);opacity:0;transition:all .3s;box-shadow:var(--shl);max-width:320px}
@@ -267,7 +278,6 @@ tr:hover td{background:var(--bg)}
 
 <!-- ════ APP SHELL ════ -->
 <div id="app">
-  <!-- Mobile topbar -->
   <div class="topbar">
     <h2>🎓 VCE Events</h2>
     <button class="burger" id="burger" onclick="toggleSB()">
@@ -276,7 +286,6 @@ tr:hover td{background:var(--bg)}
   </div>
   <div class="overbg" id="overbg" onclick="closeSB()"></div>
 
-  <!-- Sidebar -->
   <div class="sb" id="sidebar">
     <div class="sbhead">
       <h2>🎓 VCE Events</h2>
@@ -292,7 +301,6 @@ tr:hover td{background:var(--bg)}
     </div>
   </div>
 
-  <!-- Main -->
   <div class="main" id="mainContent"></div>
 </div>
 
@@ -336,16 +344,41 @@ tr:hover td{background:var(--bg)}
   </div>
 </div>
 
-<!-- QR modal -->
-<div class="mov" id="qrModal">
-  <div class="modal">
-    <div class="mh"><h3>Attendance QR Code</h3><button class="mc" onclick="closeModal('qrModal')">✕</button></div>
-    <div class="qrbox">
-      <div class="qrcode" id="qrDisplay"></div>
-      <div id="qrName" style="font-weight:700;font-size:15px;margin-bottom:4px"></div>
-      <div id="qrDate" style="color:var(--t2);font-size:13px;margin-bottom:14px"></div>
-      <button class="btn btn-p" id="qrBtn" onclick="markAttendance()" style="width:auto">✅ Simulate QR Scan</button>
+<!-- QR Display Modal (Organizer/Admin) -->
+<div class="mov" id="qrDisplayModal">
+  <div class="modal" style="max-width:400px">
+    <div class="mh"><h3>📱 Event QR Code</h3><button class="mc" onclick="closeQRDisplay()">✕</button></div>
+    <div class="qr-display-box">
+      <div class="qr-validity" id="qrValidityBadge">✅ Valid for Today</div>
+      <div class="qr-canvas-wrap"><canvas id="qrCanvas" width="180" height="180"></canvas></div>
+      <div id="qrDispName" style="font-weight:700;font-size:15px;margin-bottom:4px"></div>
+      <div id="qrDispDate" style="color:var(--t2);font-size:13px;margin-bottom:6px"></div>
+      <div id="qrDispToken" style="font-family:monospace;font-size:10px;color:var(--t3);word-break:break-all;background:var(--surface);padding:7px 10px;border-radius:6px;margin-top:8px"></div>
+      <p class="tsm t2 mt2">Show this QR to students at the event venue. Students scan it with their app to mark attendance.</p>
     </div>
+    <div class="mf"><button class="btn btn-o btn-sm" onclick="closeQRDisplay()">Close</button></div>
+  </div>
+</div>
+
+<!-- QR Scanner Modal (Student) -->
+<div class="mov" id="qrScanModal">
+  <div class="modal" style="max-width:400px">
+    <div class="mh"><h3>📷 Scan QR Code</h3><button class="mc" onclick="closeScanner()">✕</button></div>
+    <div class="mb" style="text-align:center">
+      <div id="scanEventName" style="font-weight:700;font-size:15px;margin-bottom:14px"></div>
+      <div class="scanner-wrap" id="scannerWrap">
+        <video id="scanVideo" playsinline muted></video>
+        <div class="scan-overlay"><div class="scan-frame"><div class="scan-line"></div></div></div>
+      </div>
+      <p class="tsm t2 mt2" id="scanStatus">Align the QR code within the frame</p>
+      <!-- Manual entry fallback -->
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <p class="tsm t3 mb2">Or enter QR token manually (if camera unavailable):</p>
+        <input type="text" id="manualToken" placeholder="Paste QR token here">
+        <button class="btn btn-p btn-sm" onclick="submitManualToken()" style="width:100%;margin-top:8px">Submit Token</button>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-o btn-sm" onclick="closeScanner()">Cancel</button></div>
   </div>
 </div>
 
@@ -371,16 +404,26 @@ tr:hover td{background:var(--bg)}
   </div>
 </div>
 
+<!-- jsQR for QR decoding -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
 <script>
 // ══════════════════ CONFIG ══════════════════
-const API = 'https://college-event-management-production.up.railway.app';
+const API = 'https://college-event-management-production.up.railway.app/api';
 
 // ══════════════════ STATE ══════════════════
 let currentUser = null;
 let token = localStorage.getItem('vce_token') || null;
 let loginRole = 'student', signupRole = 'student';
-let selectedRating = 0, currentFbEid = null, currentQREid = null, currentFilter = 'All';
-let editingEventId = null; // null = create, number = edit
+let selectedRating = 0, currentFbEid = null, currentFilter = 'All';
+let editingEventId = null;
+
+// Scanner state
+let scanStream = null;
+let scanAnimFrame = null;
+let scanEventId = null;
+let scanCanvas = null;
+let scanCtx = null;
 
 // ══════════════════ API HELPER ══════════════════
 async function api(path, opts = {}) {
@@ -412,7 +455,7 @@ function setSignupRole(r, el) {
 
 async function doLogin() {
   const email = document.getElementById('lEmail').value.trim();
-  const pass  = document.getElementById('lPass').value.trim();
+  const pass  = document.getElementById('lPass').value;
   const errEl = document.getElementById('lErr');
   errEl.classList.remove('show');
   if (!email || !pass) { errEl.textContent = 'Enter email and password'; errEl.classList.add('show'); return; }
@@ -423,6 +466,7 @@ async function doLogin() {
     token = d.token;
     localStorage.setItem('vce_token', token);
     currentUser = d.user;
+    localStorage.setItem('vce_user', JSON.stringify(d.user));
     enterApp();
   } catch (e) {
     errEl.textContent = e.message; errEl.classList.add('show');
@@ -434,7 +478,7 @@ async function doLogin() {
 async function doSignup() {
   const name   = document.getElementById('sName').value.trim();
   const email  = document.getElementById('sEmail').value.trim();
-  const pass   = document.getElementById('sPass').value.trim();
+  const pass   = document.getElementById('sPass').value;
   const branch = document.getElementById('sBranch').value.trim() || 'CSE';
   const year   = parseInt(document.getElementById('sYear')?.value) || 1;
   const errEl  = document.getElementById('sErr');
@@ -448,6 +492,7 @@ async function doSignup() {
     token = d.token;
     localStorage.setItem('vce_token', token);
     currentUser = d.user;
+    localStorage.setItem('vce_user', JSON.stringify(d.user));
     enterApp();
     showNotif('🎉 Account created! Welcome to VCE Events.');
   } catch (e) {
@@ -466,6 +511,8 @@ function enterApp() {
 function logout() {
   currentUser = null; token = null;
   localStorage.removeItem('vce_token');
+  localStorage.removeItem('vce_user');
+  closeScanner();
   document.getElementById('app').classList.remove('on');
   document.getElementById('authScreen').classList.remove('hidden');
   switchAuth('login');
@@ -486,38 +533,11 @@ function closeSB() {
   document.getElementById('burger').classList.remove('open');
 }
 
-// ══════════════════ AUTO LOGIN FROM STORED TOKEN ══════════════════
-async function tryAutoLogin() {
-  if (!token) return;
-  try {
-    // Verify token is still valid by fetching user profile via registrations (any authed endpoint)
-    const d = await api('/my/registrations');
-    // Token works — decode user from token payload
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-    // Fetch full user from a request we already have (use analytics for admin, my/registrations for others)
-    // We'll reconstruct currentUser from token + a fresh fetch
-    currentUser = { id: payload.id, role: payload.role, name: '', email: '', branch: '' };
-    // Try to get user details
-    if (payload.role === 'admin') {
-      const users = await api('/admin/users');
-      const me = users.find(u => u.id === payload.id);
-      if (me) currentUser = me;
-    } else {
-      // We can infer from registrations or just use token data; fetch admin/users won't work
-      // Store minimal user and it will show correctly
-    }
-    enterApp();
-  } catch (e) {
-    // Token expired or invalid
-    token = null;
-    localStorage.removeItem('vce_token');
-  }
-}
-
 // ══════════════════ APP INIT ══════════════════
 function initApp() {
   const colors = { student: '#2563eb', organizer: '#16a34a', admin: '#7c3aed' };
-  const name = currentUser.name || 'User';
+  const name = currentUser.name || currentUser.email || 'User';
+
   document.getElementById('sbAv').textContent = name.charAt(0).toUpperCase();
   document.getElementById('sbAv').style.background = colors[currentUser.role] || '#2563eb';
   document.getElementById('sbName').textContent = name;
@@ -525,18 +545,19 @@ function initApp() {
 
   const navMap = {
     student: [
-      { ic: '🏠', lb: 'Dashboard',          pg: 'studentDash' },
-      { ic: '📅', lb: 'Browse Events',       pg: 'browseEvents' },
-      { ic: '🎫', lb: 'My Registrations',    pg: 'myRegs' },
-      { ic: '🤖', lb: 'AI Recommendations',  pg: 'aiRec' },
-      { ic: '⭐', lb: 'Give Feedback',       pg: 'myFeedback' },
+      { ic: '🏠', lb: 'Dashboard',         pg: 'studentDash' },
+      { ic: '📅', lb: 'Browse Events',      pg: 'browseEvents' },
+      { ic: '🎫', lb: 'My Registrations',   pg: 'myRegs' },
+      { ic: '📷', lb: 'Scan QR / Attend',   pg: 'scanPage' },
+      { ic: '🤖', lb: 'AI Recommendations', pg: 'aiRec' },
+      { ic: '⭐', lb: 'Give Feedback',      pg: 'myFeedback' },
     ],
     organizer: [
-      { ic: '🏠', lb: 'Dashboard',    pg: 'orgDash' },
-      { ic: '📅', lb: 'My Events',    pg: 'myEvents' },
-      { ic: '➕', lb: 'Create Event', pg: 'createPage' },
-      { ic: '👥', lb: 'Registrations',pg: 'orgRegs' },
-      { ic: '📊', lb: 'Attendance',   pg: 'orgAttend' },
+      { ic: '🏠', lb: 'Dashboard',     pg: 'orgDash' },
+      { ic: '📅', lb: 'My Events',     pg: 'myEvents' },
+      { ic: '➕', lb: 'Create Event',  pg: 'createPage' },
+      { ic: '👥', lb: 'Registrations', pg: 'orgRegs' },
+      { ic: '📊', lb: 'Attendance',    pg: 'orgAttend' },
     ],
     admin: [
       { ic: '🏠', lb: 'Dashboard',        pg: 'adminDash' },
@@ -544,6 +565,7 @@ function initApp() {
       { ic: '👤', lb: 'Users',             pg: 'adminUsers' },
       { ic: '📊', lb: 'Analytics',         pg: 'adminAnalytics' },
       { ic: '📝', lb: 'Feedback Reports',  pg: 'adminFeedback' },
+      { ic: '📊', lb: 'Attendance',        pg: 'orgAttend' },
     ],
   };
 
@@ -567,12 +589,13 @@ function initApp() {
 
 // ══════════════════ PAGE ROUTER ══════════════════
 function loadPage(pg) {
+  closeScanner(); // stop camera if switching away
   document.getElementById('mainContent').innerHTML = ldHtml();
-  const pages = { studentDash, browseEvents, myRegs, aiRec, myFeedback, orgDash, myEvents, createPage, orgRegs, orgAttend, adminDash, adminEvents, adminUsers, adminAnalytics, adminFeedback };
+  const pages = { studentDash, browseEvents, myRegs, scanPage, aiRec, myFeedback, orgDash, myEvents, createPage, orgRegs, orgAttend, adminDash, adminEvents, adminUsers, adminAnalytics, adminFeedback };
   if (pages[pg]) pages[pg](document.getElementById('mainContent'));
 }
-const ldHtml = (m = 'Loading…') => `<div class="loading"><div class="spin spind"></div><span class="t2">${m}</span></div>`;
-const errHtml = m => `<div class="empty"><div class="ei">⚠️</div><p style="color:var(--red);font-weight:700">API Error</p><p class="tsm mt1">${m}</p><p class="tsm t3 mt1">Is the backend running on <b>localhost:3001</b>?</p></div>`;
+const ldHtml  = (m='Loading…') => `<div class="loading"><div class="spin spind"></div><span class="t2">${m}</span></div>`;
+const errHtml = m => `<div class="empty"><div class="ei">⚠️</div><p style="color:var(--red);font-weight:700">Error</p><p class="tsm mt1">${m}</p></div>`;
 const CAT_COLORS = { Fest:'#2563eb',Workshop:'#16a34a',Seminar:'#7c3aed',Competition:'#ea580c',Cultural:'#db2777',Sports:'#0891b2' };
 
 // ══════════════════ STUDENT PAGES ══════════════════
@@ -582,7 +605,7 @@ async function studentDash(mc) {
     const [regs, events] = await Promise.all([api('/my/registrations'), api('/events')]);
     const attended = regs.filter(r => r.attended).length;
     mc.innerHTML = `
-    <div class="ph"><h1>Welcome back, ${currentUser.name || 'there'}! 👋</h1><p>Here's your activity overview</p></div>
+    <div class="ph"><h1>Welcome back, ${esc(currentUser.name || 'there')}! 👋</h1><p>Here's your activity overview</p></div>
     <div class="stats">
       <div class="sc blue"><div class="lb">Registered</div><div class="vl">${regs.length}</div><div class="sb2">Total events</div></div>
       <div class="sc green"><div class="lb">Attended</div><div class="vl">${attended}</div><div class="sb2">Completed</div></div>
@@ -592,7 +615,7 @@ async function studentDash(mc) {
     <div class="card"><div class="ch"><h3>📅 Your Registered Events</h3></div><div class="cb">
       ${regs.length ? regs.map(r => `
         <div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-          <div><div class="bold">${r.title}</div><div class="tsm t2">${r.date} • ${r.venue}</div></div>
+          <div><div class="bold">${esc(r.title)}</div><div class="tsm t2">${r.date} • ${esc(r.venue)}</div></div>
           <span class="badge ${r.attended ? 'bg' : 'bb'}">${r.attended ? '✅ Attended' : r.category}</span>
         </div>`).join('') : '<div class="empty"><div class="ei">📭</div><p>No registrations yet. Browse events!</p></div>'}
     </div></div>`;
@@ -627,25 +650,29 @@ async function fetchEvents(cat) {
       const isMine = e.my_status === 'registered';
       const isWait = e.my_status === 'waitlisted';
       const isFull = e.registered_count >= e.capacity && !isMine;
-      const t = esc(e.title), v = esc(e.venue);
+      const today = new Date().toISOString().slice(0,10);
+      const isToday = e.date === today;
       return `<div class="ec">
         <div class="estrip" style="background:${CAT_COLORS[e.category]||'#94a3b8'}"></div>
         <div class="eb">
           <div class="ecat" style="color:${CAT_COLORS[e.category]}">${e.category}</div>
-          <div class="etitle">${e.title}</div>
+          ${isToday ? '<span class="badge bo" style="margin-bottom:5px">📍 Today</span>' : ''}
+          <div class="etitle">${esc(e.title)}</div>
           <div class="emeta">
             <span>📅 ${e.date}</span><span>🕐 ${e.time||'—'}</span>
-            <span>📍 ${e.venue}</span><span>👥 ${e.registered_count}/${e.capacity}</span>
+            <span>📍 ${esc(e.venue)}</span><span>👥 ${e.registered_count}/${e.capacity}</span>
             ${e.avg_rating ? `<span>⭐ ${e.avg_rating}/5</span>` : ''}
           </div>
           <div class="capbar"><div class="capfill ${fc}" style="width:${Math.min(fill*100,100)}%"></div></div>
         </div>
         <div class="ef">
           ${isMine
-            ? `<span class="badge bg">✅ Registered</span><button class="btn btn-d btn-sm" onclick="cancelReg(${e.id})">Cancel</button>`
+            ? `<span class="badge bg">✅ Registered</span>
+               ${isToday ? `<button class="btn btn-g btn-sm" onclick="openScannerModal(${e.id},'${esc2(e.title)}')">📷 Scan QR</button>` : ''}
+               <button class="btn btn-d btn-sm" onclick="cancelReg(${e.id})">Cancel</button>`
             : isWait ? `<span class="badge bo">⏳ Waitlisted</span>`
             : isFull ? `<button class="btn btn-o btn-sm" onclick="joinWaitlist(${e.id})">Join Waitlist</button><span class="badge br">Full</span>`
-            : `<button class="btn btn-p btn-sm" onclick="openRegModal(${e.id},'${t}','${e.date}','${e.time||''}','${v}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0">Register →</button>`}
+            : `<button class="btn btn-p btn-sm" onclick="openRegModal(${e.id},'${esc2(e.title)}','${e.date}','${e.time||''}','${esc2(e.venue)}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0">Register →</button>`}
         </div>
       </div>`;
     }).join('') || `<div class="empty" style="grid-column:1/-1"><div class="ei">🔍</div><p>No events found</p></div>`;
@@ -656,23 +683,59 @@ async function myRegs(mc) {
   mc.innerHTML = ldHtml();
   try {
     const regs = await api('/my/registrations');
+    const today = new Date().toISOString().slice(0,10);
     mc.innerHTML = `
     <div class="ph"><h1>My Registrations 🎫</h1><p>Track your event registrations and attendance</p></div>
     <div class="card"><div class="ch"><h3>All Registrations (${regs.length})</h3></div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Status</th><th>QR</th><th>Feedback</th></tr></thead>
+      <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Status</th><th>Attendance</th><th>Feedback</th></tr></thead>
       <tbody>${regs.length ? regs.map(r => {
-        const t = esc(r.title), v = esc(r.venue);
+        const isToday = r.date === today;
         return `<tr>
-          <td><div class="bold">${r.title}</div><div class="tsm t2">${r.category}</div></td>
-          <td>${r.date}</td><td>${r.venue}</td>
-          <td>${r.attended ? '<span class="badge bg">✅ Attended</span>' : r.status==='waitlisted' ? '<span class="badge bo">⏳ Waitlisted</span>' : '<span class="badge bb">📅 Upcoming</span>'}</td>
-          <td>${r.attended ? '<span class="tsm t3">Done</span>' : r.status==='registered' ? `<button class="btn btn-o btn-sm" onclick="openQR(${r.event_id},'${t}','${r.date}','${v}')">📱 QR</button>` : '—'}</td>
-          <td>${r.attended && !r.feedback_given ? `<button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${t}')" style="width:auto;margin-top:0">Rate ⭐</button>` : r.attended && r.feedback_given ? '<span class="badge bg">Done</span>' : '<span class="tsm t3">—</span>'}</td>
+          <td><div class="bold">${esc(r.title)}</div><div class="tsm t2">${r.category}${isToday ? ' <span class="badge bo" style="font-size:9px">Today</span>' : ''}</div></td>
+          <td>${r.date}</td><td>${esc(r.venue)}</td>
+          <td>${r.attended ? '<span class="badge bg">✅ Attended</span>' : r.status==='waitlisted' ? '<span class="badge bo">⏳ Waitlisted</span>' : '<span class="badge bb">📅 Registered</span>'}</td>
+          <td>${r.attended ? '<span class="tsm t3">Done</span>' : (r.status==='registered' && isToday) ? `<button class="btn btn-g btn-sm" onclick="openScannerModal(${r.event_id},'${esc2(r.title)}')">📷 Scan QR</button>` : (r.status==='registered' && !isToday) ? `<span class="tsm t3">Available on ${r.date}</span>` : '—'}</td>
+          <td>${r.attended && !r.feedback_given ? `<button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${esc2(r.title)}')" style="width:auto;margin-top:0">Rate ⭐</button>` : r.attended && r.feedback_given ? '<span class="badge bg">Done ✓</span>' : '<span class="tsm t3">—</span>'}</td>
         </tr>`;}).join('') : '<tr><td colspan="6"><div class="empty"><div class="ei">📭</div><p>No registrations yet</p></div></td></tr>'}
       </tbody>
     </table></div></div>`;
   } catch (e) { mc.innerHTML = errHtml(e.message); }
+}
+
+// ── Student QR Scanner page ──
+async function scanPage(mc) {
+  mc.innerHTML = ldHtml();
+  try {
+    const regs = await api('/my/registrations');
+    const today = new Date().toISOString().slice(0,10);
+    const todayRegs = regs.filter(r => r.date === today && r.status === 'registered' && !r.attended);
+
+    mc.innerHTML = `
+    <div class="ph"><h1>Scan QR Code 📷</h1><p>Mark your attendance by scanning the event QR code</p></div>
+    ${todayRegs.length ? `
+    <div class="card"><div class="ch"><h3>📅 Today's Events — Ready to Attend</h3></div><div class="cb">
+      ${todayRegs.map(r => `
+        <div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div class="bold">${esc(r.title)}</div>
+            <div class="tsm t2">🕐 ${r.time||'—'} &nbsp;|&nbsp; 📍 ${esc(r.venue)}</div>
+          </div>
+          <button class="btn btn-g btn-sm" onclick="openScannerModal(${r.event_id},'${esc2(r.title)}')">📷 Scan QR</button>
+        </div>`).join('')}
+    </div></div>` : `
+    <div class="card"><div class="cb"><div class="empty"><div class="ei">📅</div>
+      <p>No events to attend today</p>
+      <p class="tsm t3 mt1">Events you are registered for today will appear here</p>
+    </div></div></div>`}
+    <div class="card"><div class="ch"><h3>Already Attended Today</h3></div><div class="cb">
+      ${regs.filter(r=>r.date===today&&r.attended).map(r=>`
+        <div class="flex aic jb" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div class="bold">${esc(r.title)}</div>
+          <span class="badge bg">✅ Attended</span>
+        </div>`).join('') || '<p class="t3 tsm">None yet today</p>'}
+    </div></div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function aiRec(mc) {
@@ -684,18 +747,16 @@ async function aiRec(mc) {
     mc.innerHTML = `
     <div class="ph"><h1>AI Recommendations 🤖</h1><p>Personalised for your interests</p></div>
     <div class="card mb2"><div class="cb"><div class="recpill">🧠 AI Insights</div>
-      <p class="t2 mt2">You prefer <b style="color:var(--purple)">${topCat}</b> events. Matches for <b>${user_branch}</b> branch:</p>
+      <p class="t2 mt2">You prefer <b style="color:var(--purple)">${topCat}</b> events. Matches for <b>${esc(user_branch)}</b> branch:</p>
     </div></div>
-    <div class="eg">${recs.length ? recs.map(e => {
-      const t = esc(e.title), v = esc(e.venue);
-      return `<div class="ec">
+    <div class="eg">${recs.length ? recs.map(e => `<div class="ec">
         <div class="estrip" style="background:linear-gradient(90deg,#7c3aed,#2563eb)"></div>
-        <div class="eb"><div class="recpill">✨ ${e.reason||'Recommended'}</div>
-          <div class="etitle mt1">${e.title}</div>
-          <div class="emeta"><span>📅 ${e.date}</span><span>📍 ${e.venue}</span><span>👥 ${e.registered_count}/${e.capacity}</span></div>
+        <div class="eb"><div class="recpill">✨ ${esc(e.reason||'Recommended')}</div>
+          <div class="etitle mt1">${esc(e.title)}</div>
+          <div class="emeta"><span>📅 ${e.date}</span><span>📍 ${esc(e.venue)}</span><span>👥 ${e.registered_count}/${e.capacity}</span></div>
         </div>
-        <div class="ef"><button class="btn btn-p btn-sm" onclick="openRegModal(${e.id},'${t}','${e.date}','${e.time||''}','${v}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0">Register →</button></div>
-      </div>`;}).join('') : '<div class="empty" style="grid-column:1/-1"><div class="ei">🎉</div><p>All relevant events registered!</p></div>'}
+        <div class="ef"><button class="btn btn-p btn-sm" onclick="openRegModal(${e.id},'${esc2(e.title)}','${e.date}','${e.time||''}','${esc2(e.venue)}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0">Register →</button></div>
+      </div>`).join('') : '<div class="empty" style="grid-column:1/-1"><div class="ei">🎉</div><p>All relevant events registered!</p></div>'}
     </div>`;
   } catch (e) { mc.innerHTML = errHtml(e.message); }
 }
@@ -710,13 +771,13 @@ async function myFeedback(mc) {
     <div class="ph"><h1>Give Feedback ⭐</h1><p>Help improve future events</p></div>
     ${pending.length ? `<div class="card"><div class="ch"><h3>⏳ Pending (${pending.length})</h3></div><div class="cb">
       ${pending.map(r => `<div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div><div class="bold">${r.title}</div><div class="tsm t2">${r.date}</div></div>
-        <button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${esc(r.title)}')" style="width:auto;margin-top:0">Rate ⭐</button>
+        <div><div class="bold">${esc(r.title)}</div><div class="tsm t2">${r.date}</div></div>
+        <button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${esc2(r.title)}')" style="width:auto;margin-top:0">Rate ⭐</button>
       </div>`).join('')}
     </div></div>` : ''}
     <div class="card"><div class="ch"><h3>✅ Submitted (${done.length})</h3></div><div class="cb">
       ${done.map(r => `<div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div class="bold">${r.title}</div><span class="badge bg">Submitted</span>
+        <div class="bold">${esc(r.title)}</div><span class="badge bg">Submitted</span>
       </div>`).join('') || '<div class="empty"><p>None yet</p></div>'}
     </div></div>`;
   } catch (e) { mc.innerHTML = errHtml(e.message); }
@@ -731,7 +792,7 @@ async function orgDash(mc) {
     const totalRegs = evs.reduce((a,e) => a + e.registered_count, 0);
     const totalCap  = evs.reduce((a,e) => a + e.capacity, 0);
     mc.innerHTML = `
-    <div class="ph"><h1>Organizer Dashboard 📋</h1></div>
+    <div class="ph"><h1>Organizer Dashboard 📋</h1><p>Welcome, ${esc(currentUser.name||'Organizer')}!</p></div>
     <div class="stats">
       <div class="sc blue"><div class="lb">Events</div><div class="vl">${evs.length}</div></div>
       <div class="sc green"><div class="lb">Registrations</div><div class="vl">${totalRegs}</div></div>
@@ -742,11 +803,12 @@ async function orgDash(mc) {
       <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0">+ Create</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Category</th><th>Registered</th><th>Waitlist</th></tr></thead>
+      <thead><tr><th>Event</th><th>Date</th><th>Category</th><th>Registered</th><th>Waitlist</th><th>QR</th></tr></thead>
       <tbody>${evs.map(e=>`<tr>
-        <td class="bold">${e.title}</td><td>${e.date}</td>
+        <td class="bold">${esc(e.title)}</td><td>${e.date}</td>
         <td><span class="badge bb">${e.category}</span></td>
         <td>${e.registered_count}/${e.capacity}</td><td>${e.waitlist_count}</td>
+        <td><button class="btn btn-o btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 QR</button></td>
       </tr>`).join('')}</tbody>
     </table></div></div>`;
   } catch (e) { mc.innerHTML = errHtml(e.message); }
@@ -764,12 +826,13 @@ async function myEvents(mc) {
     <div style="overflow-x:auto"><table>
       <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Cap</th><th>Reg</th><th>Actions</th></tr></thead>
       <tbody>${evs.map(e=>`<tr>
-        <td><div class="bold">${e.title}</div><span class="badge bb">${e.category}</span></td>
-        <td>${e.date}</td><td>${e.venue}</td><td>${e.capacity}</td>
+        <td><div class="bold">${esc(e.title)}</div><span class="badge bb">${e.category}</span></td>
+        <td>${e.date}</td><td>${esc(e.venue)}</td><td>${e.capacity}</td>
         <td>${e.registered_count} <span class="tsm t3">(${e.waitlist_count} wait)</span></td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-o btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 QR</button>
           <button class="btn btn-o btn-sm" onclick="openEvModal(${e.id})">✏️ Edit</button>
-          <button class="btn btn-d btn-sm" onclick="deleteEvent(${e.id})">🗑 Del</button>
+          <button class="btn btn-d btn-sm" onclick="deleteEvent(${e.id})">🗑</button>
         </td>
       </tr>`).join('')}</tbody>
     </table></div></div>`;
@@ -804,12 +867,13 @@ async function orgRegs(mc) {
     <div class="ph"><h1>Registrations 👥</h1></div>
     <div class="card"><div class="ch"><h3>All (${regs.length})</h3></div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Student</th><th>Event</th><th>Branch</th><th>Year</th><th>Status</th></tr></thead>
+      <thead><tr><th>Student</th><th>Event</th><th>Branch</th><th>Year</th><th>Status</th><th>Attended</th></tr></thead>
       <tbody>${regs.length ? regs.map(r=>`<tr>
-        <td><div class="bold">${r.user_name}</div><div class="tsm t2">${r.email}</div></td>
-        <td>${r.event_title}</td><td>${r.branch}</td><td>Year ${r.year}</td>
+        <td><div class="bold">${esc(r.user_name)}</div><div class="tsm t2">${r.email}</div></td>
+        <td>${esc(r.event_title)}</td><td>${r.branch}</td><td>Year ${r.year}</td>
         <td>${r.attended?'<span class="badge bg">Attended</span>':r.status==='waitlisted'?'<span class="badge bo">Waitlisted</span>':'<span class="badge bb">Registered</span>'}</td>
-      </tr>`).join('') : '<tr><td colspan="5"><div class="empty"><p>No registrations</p></div></td></tr>'}
+        <td>${r.attended ? '✅' : '—'}</td>
+      </tr>`).join('') : '<tr><td colspan="6"><div class="empty"><p>No registrations</p></div></td></tr>'}
       </tbody>
     </table></div></div>`;
   } catch (e) { mc.innerHTML = errHtml(e.message); }
@@ -820,19 +884,25 @@ async function orgAttend(mc) {
   try {
     const [evs, allRegs] = await Promise.all([api('/events'), api('/admin/registrations')]);
     mc.innerHTML = `
-    <div class="ph"><h1>Attendance 📊</h1></div>
-    <div class="card"><div class="ch"><h3>Event Attendance</h3></div>
+    <div class="ph"><h1>Attendance 📊</h1><p>Generate QR codes for today's events</p></div>
+    <div class="card"><div class="ch"><h3>Event Attendance & QR Codes</h3></div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Registered</th><th>Attended</th><th>Rate</th><th>QR</th></tr></thead>
+      <thead><tr><th>Event</th><th>Date</th><th>Registered</th><th>Attended</th><th>Rate</th><th>QR Code</th></tr></thead>
       <tbody>${evs.map(e=>{
-        const att = allRegs.filter(r=>r.event_id===e.id&&r.attended).length;
+        const att  = allRegs.filter(r=>r.event_id===e.id&&r.attended).length;
         const rate = e.registered_count ? Math.round(att/e.registered_count*100) : 0;
+        const today = new Date().toISOString().slice(0,10);
+        const isToday = e.date === today;
         return`<tr>
-          <td class="bold">${e.title}</td><td>${e.date}</td>
+          <td><div class="bold">${esc(e.title)}</div>${isToday?'<span class="badge bo" style="font-size:9px">Today</span>':''}</td>
+          <td>${e.date}</td>
           <td>${e.registered_count}</td><td>${att}</td>
           <td><div class="flex aic gap2"><div style="width:55px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
             <div style="width:${rate}%;height:100%;background:var(--green);border-radius:3px"></div></div>${rate}%</div></td>
-          <td><button class="btn btn-o btn-sm" onclick="openQR(${e.id},'${esc(e.title)}','${e.date}','${esc(e.venue)}')">📱 QR</button></td>
+          <td>${isToday
+            ? `<button class="btn btn-g btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 Show QR</button>`
+            : `<span class="tsm t3">Only on ${e.date}</span>`
+          }</td>
         </tr>`;}).join('')}
       </tbody>
     </table></div></div>`;
@@ -846,7 +916,7 @@ async function adminDash(mc) {
   try {
     const s = await api('/admin/analytics');
     mc.innerHTML = `
-    <div class="ph"><h1>Admin Dashboard ⚙️</h1></div>
+    <div class="ph"><h1>Admin Dashboard ⚙️</h1><p>Welcome, ${esc(currentUser.name||'Admin')}!</p></div>
     <div class="stats">
       <div class="sc blue"><div class="lb">Events</div><div class="vl">${s.totalEvents}</div></div>
       <div class="sc green"><div class="lb">Students</div><div class="vl">${s.totalUsers}</div></div>
@@ -866,7 +936,7 @@ async function adminDash(mc) {
       ${s.topEvents.map((e,i)=>`<div class="flex aic jb" style="padding:9px 0;border-bottom:1px solid var(--border)">
         <div class="flex aic gap2">
           <div style="width:24px;height:24px;background:var(--pl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--primary)">${i+1}</div>
-          <span class="bold">${e.title}</span>
+          <span class="bold">${esc(e.title)}</span>
         </div>
         <span class="badge bb">${e.reg_count} registered</span>
       </div>`).join('')}
@@ -886,11 +956,12 @@ async function adminEvents(mc) {
     <div style="overflow-x:auto"><table>
       <thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Capacity</th><th>Fill</th><th>Actions</th></tr></thead>
       <tbody>${evs.map(e=>`<tr>
-        <td class="bold">${e.title}</td>
+        <td class="bold">${esc(e.title)}</td>
         <td><span class="badge bb">${e.category}</span></td>
         <td>${e.date}</td><td>${e.capacity}</td>
         <td>${e.registered_count}/${e.capacity}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-o btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 QR</button>
           <button class="btn btn-o btn-sm" onclick="openEvModal(${e.id})">✏️ Edit</button>
           <button class="btn btn-d btn-sm" onclick="deleteEvent(${e.id})">Delete</button>
         </td>
@@ -912,7 +983,7 @@ async function adminUsers(mc) {
       <tbody>${users.map(u=>`<tr>
         <td><div class="flex aic gap2">
           <div style="width:30px;height:30px;background:${col[u.role]||'#94a3b8'};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">${u.name.charAt(0).toUpperCase()}</div>
-          <span class="bold">${u.name}</span>
+          <span class="bold">${esc(u.name)}</span>
         </div></td>
         <td>${u.email}</td>
         <td><span class="badge ${u.role==='admin'?'bp':u.role==='organizer'?'bg':'bb'}">${u.role}</span></td>
@@ -957,31 +1028,190 @@ async function adminFeedback(mc) {
     ${evs.map(e=>{
       const ef=byEv[e.id]||[], avg=e.avg_rating;
       return`<div class="card">
-        <div class="ch"><h3>${e.title}</h3>
+        <div class="ch"><h3>${esc(e.title)}</h3>
           ${avg?`<div class="flex aic gap2"><span style="font-size:18px;font-weight:700;color:#f59e0b">${avg}</span><span style="color:#f59e0b">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</span><span class="tsm t2">(${ef.length})</span></div>`:'<span class="tsm t3">No reviews</span>'}
         </div>
         ${ef.length?`<div class="cb">${ef.map(f=>`
           <div style="padding:10px;background:var(--surface);border-radius:8px;margin-bottom:8px">
-            <div class="flex jb mb1"><span class="bold tsm">${f.user_name}</span><span style="color:#f59e0b">${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}</span></div>
-            ${f.comment?`<div class="tsm t2">"${f.comment}"</div>`:''}
+            <div class="flex jb mb1"><span class="bold tsm">${esc(f.user_name)}</span><span style="color:#f59e0b">${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}</span></div>
+            ${f.comment?`<div class="tsm t2">"${esc(f.comment)}"</div>`:''}
           </div>`).join('')}</div>`:''}
       </div>`;}).join('')}`;
   } catch (e) { mc.innerHTML = errHtml(e.message); }
 }
 
-// ══════════════════ ACTIONS — REGISTRATION ══════════════════
+// ══════════════════ QR DISPLAY (Organizer/Admin) ══════════════════
+
+async function openQRDisplay(eid, title, date, venue) {
+  document.getElementById('qrDispName').textContent = title;
+  document.getElementById('qrDispDate').textContent = date + ' • ' + venue;
+  document.getElementById('qrDispToken').textContent = 'Fetching QR token…';
+
+  const today = new Date().toISOString().slice(0,10);
+  const badge = document.getElementById('qrValidityBadge');
+  if (date === today) {
+    badge.textContent = '✅ Valid for Today'; badge.style.background='var(--gl)'; badge.style.color='var(--green)'; badge.style.borderColor='#bbf7d0';
+  } else {
+    badge.textContent = `⚠️ Event is on ${date} — QR only works that day`; badge.style.background='var(--ol)'; badge.style.color='var(--orange)'; badge.style.borderColor='#fed7aa';
+  }
+
+  openModal('qrDisplayModal');
+
+  try {
+    const d = await api(`/events/${eid}/qr-token`);
+    const tokenStr = d.token;
+    document.getElementById('qrDispToken').textContent = tokenStr;
+    drawQR(tokenStr, eid);
+  } catch (e) {
+    document.getElementById('qrDispToken').textContent = 'Error: ' + e.message;
+  }
+}
+
+function closeQRDisplay() {
+  closeModal('qrDisplayModal');
+}
+
+// Draw a simple deterministic QR-like visual on canvas using the token
+function drawQR(tokenStr, eventId) {
+  const canvas = document.getElementById('qrCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 180;
+  const cells = 21;
+  const cell = Math.floor(size / cells);
+  ctx.clearRect(0,0,size,size);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,size,size);
+
+  // Encode token as bits
+  let bits = [];
+  for (let i = 0; i < tokenStr.length; i++) {
+    const c = tokenStr.charCodeAt(i);
+    for (let b = 7; b >= 0; b--) bits.push((c >> b) & 1);
+  }
+
+  ctx.fillStyle = '#1e293b';
+  for (let r = 0; r < cells; r++) {
+    for (let c = 0; c < cells; c++) {
+      // Corner finders
+      const inTopLeft     = r < 7 && c < 7;
+      const inTopRight    = r < 7 && c >= cells-7;
+      const inBottomLeft  = r >= cells-7 && c < 7;
+      if (inTopLeft || inTopRight || inBottomLeft) {
+        const lr = inTopLeft?r:(inTopRight?r:r-(cells-7));
+        const lc = inTopLeft?c:(inTopRight?c-(cells-7):c);
+        // Outer border
+        if (lr===0||lr===6||lc===0||lc===6) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
+        // Inner square
+        if (lr>=2&&lr<=4&&lc>=2&&lc<=4) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
+        continue;
+      }
+      // Data area: use token bits
+      const idx = (r * cells + c) % bits.length;
+      if (bits[idx]) ctx.fillRect(c*cell, r*cell, cell-1, cell-1);
+    }
+  }
+  // Timing strips
+  for (let i = 8; i < cells-8; i++) {
+    if (i%2===0) { ctx.fillRect(i*cell,6*cell,cell,cell); ctx.fillRect(6*cell,i*cell,cell,cell); }
+  }
+}
+
+// ══════════════════ QR SCANNER (Student) ══════════════════
+
+function openScannerModal(eid, title) {
+  scanEventId = eid;
+  document.getElementById('scanEventName').textContent = title;
+  document.getElementById('scanStatus').textContent = 'Align the QR code within the frame';
+  document.getElementById('manualToken').value = '';
+  openModal('qrScanModal');
+  startCamera();
+}
+
+async function startCamera() {
+  stopCamera();
+  const video = document.getElementById('scanVideo');
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = scanStream;
+    await video.play();
+
+    // Off-screen canvas for frame capture
+    scanCanvas = document.createElement('canvas');
+    scanCtx = scanCanvas.getContext('2d');
+    scanLoop();
+  } catch (e) {
+    document.getElementById('scanStatus').textContent = 'Camera unavailable — use manual token below';
+  }
+}
+
+function scanLoop() {
+  const video = document.getElementById('scanVideo');
+  if (!video || !scanStream || !scanCtx) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    scanCanvas.width  = video.videoWidth;
+    scanCanvas.height = video.videoHeight;
+    scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+    const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+    const code = typeof jsQR !== 'undefined' ? jsQR(imageData.data, imageData.width, imageData.height) : null;
+    if (code && code.data) {
+      stopCamera();
+      handleScannedToken(code.data);
+      return;
+    }
+  }
+  scanAnimFrame = requestAnimationFrame(scanLoop);
+}
+
+function stopCamera() {
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+}
+
+function closeScanner() {
+  stopCamera();
+  closeModal('qrScanModal');
+  scanEventId = null;
+}
+
+async function handleScannedToken(tokenStr) {
+  const statusEl = document.getElementById('scanStatus');
+  if (statusEl) statusEl.textContent = '⏳ Verifying…';
+  try {
+    const d = await api(`/events/${scanEventId}/attend`, { method: 'POST', body: JSON.stringify({ qr_token: tokenStr }) });
+    closeScanner();
+    showNotif('✅ ' + d.message);
+    loadPage(currentUser.role === 'student' ? 'scanPage' : 'myRegs');
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '❌ ' + e.message;
+    showNotif(e.message, 'err');
+    // Restart camera to try again
+    setTimeout(() => {
+      if (document.getElementById('qrScanModal')?.classList.contains('open')) startCamera();
+    }, 2500);
+  }
+}
+
+function submitManualToken() {
+  const token = document.getElementById('manualToken').value.trim();
+  if (!token) { showNotif('Please enter a QR token', 'err'); return; }
+  stopCamera();
+  handleScannedToken(token);
+}
+
+// ══════════════════ REGISTRATION ACTIONS ══════════════════
 
 function openRegModal(eid, title, date, time, venue, reg, cap) {
   document.getElementById('regMTitle').textContent = 'Register: ' + title;
   document.getElementById('regMBody').innerHTML = `
     <div style="margin-bottom:14px">
-      <div class="bold" style="font-size:15px;margin-bottom:7px">${title}</div>
+      <div class="bold" style="font-size:15px;margin-bottom:7px">${esc(title)}</div>
       <div class="tsm t2 mb1">📅 ${date} &nbsp;|&nbsp; 🕐 ${time||'—'}</div>
-      <div class="tsm t2 mb1">📍 ${venue}</div>
+      <div class="tsm t2 mb1">📍 ${esc(venue)}</div>
       <div class="tsm t2">👥 ${reg}/${cap} registered</div>
     </div>
     <div style="background:var(--pl);border:1px solid #bfdbfe;border-radius:8px;padding:11px;font-size:13px;color:var(--primary)">
-      ✉️ Confirmation will be sent to <b>${currentUser.email || ''}</b>
+      ✉️ Confirmation will be sent to <b>${esc(currentUser.email || '')}</b>
     </div>`;
   const btn = document.getElementById('regMBtn');
   btn.disabled = false; btn.textContent = 'Confirm Registration';
@@ -1017,35 +1247,29 @@ async function joinWaitlist(eid) {
   } catch (e) { showNotif(e.message, 'err'); }
 }
 
-// ══════════════════ ACTIONS — CREATE / EDIT / DELETE EVENT ══════════════════
+// ══════════════════ CREATE / EDIT / DELETE EVENT ══════════════════
 
 async function openEvModal(eid = null) {
   editingEventId = eid;
   document.getElementById('evModalTitle').textContent = eid ? 'Edit Event' : 'Create New Event';
   document.getElementById('evSaveBtn').textContent = eid ? 'Save Changes' : 'Create Event';
   document.getElementById('evErr').classList.remove('show');
-
-  // Clear fields first
   ['evTitle','evDesc','evTime','evVenue','evBranch'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('evDate').value = '';
   document.getElementById('evCap').value = '';
   document.getElementById('evCat').value = 'Workshop';
-
   if (eid) {
-    // Load existing event data
     try {
       const e = await api(`/events/${eid}`);
       document.getElementById('evTitle').value  = e.title || '';
       document.getElementById('evDesc').value   = e.description || '';
       document.getElementById('evCat').value    = e.category || 'Workshop';
-      document.getElementById('evDate').value   = e.date || '';  // yyyy-mm-dd format works with date input
+      document.getElementById('evDate').value   = e.date || '';
       document.getElementById('evTime').value   = e.time || '';
       document.getElementById('evVenue').value  = e.venue || '';
       document.getElementById('evCap').value    = e.capacity || '';
       document.getElementById('evBranch').value = e.branch || '';
-    } catch (err) {
-      showNotif('Could not load event: ' + err.message, 'err'); return;
-    }
+    } catch (err) { showNotif('Could not load event: ' + err.message, 'err'); return; }
   }
   openModal('evModal');
 }
@@ -1060,7 +1284,6 @@ async function saveEvent() {
   const cap    = parseInt(document.getElementById('evCap')?.value) || 0;
   const branch = document.getElementById('evBranch')?.value.trim() || 'All';
   const errEl  = document.getElementById('evErr');
-
   errEl.classList.remove('show');
   if (!title) { errEl.textContent='Event title is required'; errEl.classList.add('show'); return; }
   if (!date)  { errEl.textContent='Date is required'; errEl.classList.add('show'); return; }
@@ -1069,16 +1292,11 @@ async function saveEvent() {
 
   const btn = document.getElementById('evSaveBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
-
   const body = JSON.stringify({ title, description: desc, category: cat, date, time, venue, capacity: cap, branch });
 
   try {
     if (editingEventId) {
-      // EDIT — backend doesn't have PUT, so delete + recreate preserving data
-      // Actually we need to check if backend supports PUT. Looking at backend code it doesn't have PUT /events/:id
-      // So we use DELETE then POST (only for admin/organizer)
-      await api(`/events/${editingEventId}`, { method: 'DELETE' });
-      await api('/events', { method: 'POST', body });
+      await api(`/events/${editingEventId}`, { method: 'PUT', body });
       showNotif('✅ Event updated successfully!');
     } else {
       await api('/events', { method: 'POST', body });
@@ -1101,39 +1319,7 @@ async function deleteEvent(id) {
   } catch (e) { showNotif(e.message, 'err'); }
 }
 
-// ══════════════════ ACTIONS — QR ══════════════════
-
-function openQR(eid, title, date, venue) {
-  currentQREid = eid;
-  document.getElementById('qrName').textContent = title;
-  document.getElementById('qrDate').textContent = date + ' • ' + venue;
-  const btn = document.getElementById('qrBtn');
-  btn.disabled = false; btn.textContent = '✅ Simulate QR Scan';
-  // Render QR
-  const qr = document.getElementById('qrDisplay');
-  const seed = eid * 7 + 13; let cells = '';
-  for (let i = 0; i < 100; i++) {
-    const on = (seed*(i+1)*17+i*3)%11<5 || i<11 || (i>=88&&i<100) || i%10===0 || i%10===9;
-    cells += `<div class="qrcell" style="background:${on?'#000':'transparent'}"></div>`;
-  }
-  qr.innerHTML = `<div class="qrinner">${cells}</div>`;
-  openModal('qrModal');
-}
-
-async function markAttendance() {
-  const btn = document.getElementById('qrBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Marking…';
-  try {
-    const d = await api(`/events/${currentQREid}/attend`, { method: 'POST' });
-    closeModal('qrModal'); showNotif('✅ ' + d.message);
-    loadPage('myRegs');
-  } catch (e) {
-    showNotif(e.message, 'err');
-    btn.disabled = false; btn.textContent = '✅ Simulate QR Scan';
-  }
-}
-
-// ══════════════════ ACTIONS — FEEDBACK ══════════════════
+// ══════════════════ FEEDBACK ══════════════════
 
 function openFeedback(eid, title) {
   currentFbEid = eid; selectedRating = 0;
@@ -1176,53 +1362,57 @@ function showNotif(msg, type = '') {
   n.className = 'notif' + (type==='err'?' err':type==='inf'?' inf':'');
   n.classList.add('show');
   clearTimeout(n._t);
-  n._t = setTimeout(() => n.classList.remove('show'), 4000);
+  n._t = setTimeout(() => n.classList.remove('show'), 4500);
 }
 
-// Escape for inline onclick attributes
-function esc(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+// esc for innerHTML display
+function esc(s) { 
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); 
+}
+// esc2 for use in JS string attributes (single-quote safe)
+function esc2(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
-// Close modals on overlay click
 document.querySelectorAll('.mov').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  m.addEventListener('click', e => { 
+    if (e.target === m) { 
+      if (m.id === 'qrScanModal') closeScanner();
+      else m.classList.remove('open'); 
+    } 
+  });
 });
 
-// ══════════════════ BOOT ══════════════════
-// Try to restore session from localStorage token, else show auth screen
+// ══════════════════ BOOT — Session restore ══════════════════
 (async function boot() {
-  if (token) {
+  if (!token) return;
+  try {
+    const b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const payload = JSON.parse(atob(b64.padEnd(b64.length + (4 - b64.length % 4) % 4, '=')));
+    if (payload.exp && Date.now() > payload.exp) throw new Error('expired');
+
+    // Always fetch fresh user data from server to get correct name
     try {
-      // Decode token payload
-      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-      if (payload.exp && Date.now() > payload.exp) throw new Error('expired');
-      // Minimal user from token; try to enrich for admin
-      currentUser = { id: payload.id, role: payload.role, name: '', email: '', branch: 'CSE' };
-      if (payload.role === 'admin') {
-        try {
-          const users = await api('/admin/users');
-          const me = users.find(u => u.id === payload.id);
-          if (me) currentUser = me;
-        } catch(_) {}
+      currentUser = await api('/me');
+      localStorage.setItem('vce_user', JSON.stringify(currentUser));
+    } catch {
+      // Fallback to cached user
+      const stored = localStorage.getItem('vce_user');
+      if (stored) {
+        currentUser = JSON.parse(stored);
       } else {
-        // Get name from registrations endpoint indirectly — we'll store name in token via login
-        // For now enrich by checking a simple fetch
-        try {
-          // Store name when logging in and put in localStorage
-          const stored = localStorage.getItem('vce_user');
-          if (stored) currentUser = { ...currentUser, ...JSON.parse(stored) };
-        } catch(_) {}
+        currentUser = { id: payload.id, role: payload.role, name: 'User', email: '', branch: 'CSE' };
       }
-      enterApp();
-    } catch (e) {
-      token = null;
-      localStorage.removeItem('vce_token');
     }
+
+    if (!currentUser?.role) throw new Error('no role');
+    enterApp();
+  } catch (e) {
+    token = null;
+    localStorage.removeItem('vce_token');
+    localStorage.removeItem('vce_user');
   }
 })();
 </script>
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> 5361931 (restructure project files)

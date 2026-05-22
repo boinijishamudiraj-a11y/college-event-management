@@ -7,7 +7,7 @@ const fs     = require('node:fs');
 // ─── PERSISTENT PATH ─────────────────────────────────────────────────────────
 // On Railway, mount a volume at /data so the DB survives redeploys.
 // Locally it falls back to the project root.
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || "/data";
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const DB_PATH  = path.join(DATA_DIR, 'database.db');
 

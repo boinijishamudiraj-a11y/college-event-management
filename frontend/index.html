@@ -4,259 +4,398 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VCE Event Management System</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f7fa;--surface:#f0f2f5;
-  --primary:#2563eb;--pl:#eff4ff;--pd:#1d4ed8;
-  --green:#16a34a;--gl:#f0fdf4;
-  --orange:#ea580c;--ol:#fff7ed;
-  --red:#dc2626;--rl:#fef2f2;
-  --purple:#7c3aed;--pul:#f5f3ff;
-  --text:#0f172a;--t2:#475569;--t3:#94a3b8;
-  --border:#e2e8f0;--r:10px;
-  --sh:0 1px 3px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.06);
-  --shl:0 10px 25px rgba(0,0,0,.12);
-  --sbw:224px;
+  /* Core palette */
+  --ink:#0d1117;
+  --ink-2:#374151;
+  --ink-3:#6b7280;
+  --ink-4:#9ca3af;
+  --line:#e5e7eb;
+  --line-2:#f3f4f6;
+  --surface:#ffffff;
+  --canvas:#f8f9fc;
+
+  /* Brand */
+  --indigo:#4f46e5;
+  --indigo-lt:#eef2ff;
+  --indigo-dk:#3730a3;
+  --indigo-mid:#6366f1;
+
+  /* Accent — Student */
+  --sky:#0ea5e9;
+  --sky-lt:#f0f9ff;
+  --sky-dk:#0369a1;
+
+  /* Accent — Organizer */
+  --emerald:#059669;
+  --emerald-lt:#ecfdf5;
+  --emerald-dk:#047857;
+
+  /* Status */
+  --amber:#d97706;
+  --amber-lt:#fffbeb;
+  --rose:#e11d48;
+  --rose-lt:#fff1f2;
+  --violet:#7c3aed;
+  --violet-lt:#f5f3ff;
+
+  --r-sm:8px;
+  --r:12px;
+  --r-lg:16px;
+  --r-xl:20px;
+
+  --shadow-xs:0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.07);
+  --shadow:0 4px 16px rgba(0,0,0,.09);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.13);
+
+  --sb-w:256px;
+  --topbar-h:58px;
 }
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
 
 /* ══ AUTH ══ */
-#authScreen{min-height:100vh;background:linear-gradient(135deg,#1e3a8a,#2563eb 50%,#0ea5e9);display:flex;align-items:center;justify-content:center;padding:20px}
+#authScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:var(--canvas)}
+#authScreen::before{content:'';position:absolute;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(79,70,229,.08) 0%,transparent 70%);pointer-events:none}
+#authScreen::after{content:'';position:absolute;bottom:-150px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(14,165,233,.07) 0%,transparent 70%);pointer-events:none}
 #authScreen.hidden{display:none}
-.abox{background:#fff;border-radius:20px;padding:36px 38px;width:100%;max-width:430px;box-shadow:0 25px 60px rgba(0,0,0,.22)}
-.alogo{text-align:center;margin-bottom:22px}
-.alogo .av{width:60px;height:60px;background:var(--pl);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:26px}
-.alogo h1{font-size:20px;font-weight:700;color:var(--primary);margin-top:8px}
-.alogo p{font-size:12px;color:var(--t2);margin-top:2px}
-.atabs{display:flex;background:var(--surface);border-radius:8px;padding:3px;gap:3px;margin-bottom:18px}
-.atab{flex:1;text-align:center;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);transition:all .2s}
-.atab.on{background:#fff;color:var(--primary);box-shadow:var(--sh)}
-label{display:block;font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;margin-top:12px;text-transform:uppercase;letter-spacing:.05em}
-input,select,textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--text);background:#fff;outline:none;transition:border-color .2s}
-input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+
+.abox{background:var(--surface);border-radius:var(--r-xl);padding:40px 40px 36px;width:100%;max-width:440px;box-shadow:var(--shadow-lg);border:1px solid var(--line);position:relative;z-index:1}
+
+.alogo{text-align:center;margin-bottom:28px}
+.alogo-badge{display:inline-flex;align-items:center;gap:8px;background:var(--indigo-lt);border:1px solid rgba(79,70,229,.2);padding:8px 16px;border-radius:99px;margin-bottom:16px}
+.alogo-badge .ic{font-size:18px}
+.alogo-badge span{font-size:13px;font-weight:600;color:var(--indigo);font-family:'Sora',sans-serif;letter-spacing:.01em}
+.alogo h1{font-family:'Sora',sans-serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:4px}
+.alogo p{font-size:13px;color:var(--ink-3)}
+
+.atabs{display:flex;background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-sm);padding:4px;gap:3px;margin-bottom:22px}
+.atab{flex:1;text-align:center;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--ink-3);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.atab i{font-size:13px}
+.atab.on{background:var(--surface);color:var(--indigo);box-shadow:var(--shadow-xs);font-weight:600;border:1px solid rgba(79,70,229,.15)}
+.atab:not(.on):hover{color:var(--ink-2);background:rgba(0,0,0,.03)}
+
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:5px;margin-top:16px;letter-spacing:.03em;text-transform:uppercase}
+input,select,textarea{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--surface);outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+input::placeholder,textarea::placeholder{color:var(--ink-4)}
 textarea{resize:vertical;min-height:80px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.rpick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
-.ropt{border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);transition:all .2s}
-.ropt.on{border-color:var(--primary);background:var(--pl);color:var(--primary)}
-.ropt .ri{font-size:17px;display:block;margin-bottom:2px}
-.errmsg{background:#fef2f2;border:1px solid #fecaca;color:var(--red);padding:9px 12px;border-radius:7px;font-size:12px;margin-top:10px;display:none}
-.errmsg.show{display:block}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
-.btn-p{background:var(--primary);color:#fff;width:100%;margin-top:14px}
-.btn-p:hover:not(:disabled){background:var(--pd)}
-.btn-d{background:var(--red);color:#fff}
-.btn-d:hover{background:#b91c1c}
-.btn-o{background:#fff;color:var(--primary);border:1.5px solid var(--primary)}
-.btn-o:hover{background:var(--pl)}
-.btn-g{background:var(--green);color:#fff}
-.btn-g:hover{background:#15803d}
-.btn-sm{padding:6px 12px;font-size:12px}
-.swlink{text-align:center;margin-top:12px;font-size:13px;color:var(--t2)}
-.swlink a{color:var(--primary);cursor:pointer;font-weight:600;text-decoration:underline}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7280' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.rpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.ropt{border:1.5px solid var(--line);border-radius:var(--r-sm);padding:10px 6px;text-align:center;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--ink-3);transition:all .2s}
+.ropt:hover{border-color:var(--indigo);color:var(--indigo);background:var(--indigo-lt)}
+.ropt.on{border-color:var(--indigo);background:var(--indigo-lt);color:var(--indigo);font-weight:600}
+.ropt .ri{font-size:18px;display:block;margin-bottom:4px}
+
+.errmsg{background:var(--rose-lt);border:1px solid rgba(225,29,72,.2);color:var(--rose);padding:10px 13px;border-radius:var(--r-sm);font-size:13px;margin-top:12px;display:none;align-items:center;gap:7px}
+.errmsg.show{display:flex}
+.errmsg::before{content:'\f071';font-family:'Font Awesome 6 Free';font-weight:900;font-size:12px;flex-shrink:0}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .18s;letter-spacing:.01em;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;pointer-events:none}
+.btn-p{background:var(--indigo);color:#fff;border-color:var(--indigo);width:100%;margin-top:18px;padding:12px 18px}
+.btn-p:hover{background:var(--indigo-dk);border-color:var(--indigo-dk);transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,70,229,.35)}
+.btn-p:active{transform:translateY(0)}
+.btn-d{background:var(--rose-lt);color:var(--rose);border-color:rgba(225,29,72,.25)}
+.btn-d:hover{background:var(--rose);color:#fff;border-color:var(--rose)}
+.btn-o{background:var(--surface);color:var(--indigo);border-color:rgba(79,70,229,.3)}
+.btn-o:hover{background:var(--indigo-lt);border-color:var(--indigo)}
+.btn-g{background:var(--emerald-lt);color:var(--emerald);border-color:rgba(5,150,105,.25)}
+.btn-g:hover{background:var(--emerald);color:#fff;border-color:var(--emerald)}
+.btn-sm{padding:6px 13px;font-size:12.5px;border-radius:6px}
+.btn-xs{padding:4px 10px;font-size:12px;border-radius:6px}
+
+.swlink{text-align:center;margin-top:14px;font-size:13px;color:var(--ink-3)}
+.swlink a{color:var(--indigo);cursor:pointer;font-weight:600;text-decoration:none;border-bottom:1px solid rgba(79,70,229,.3)}
+.swlink a:hover{border-bottom-color:var(--indigo)}
 #signupBox{display:none}
 
 /* ══ APP ══ */
 #app{display:none;min-height:100vh}
 #app.on{display:flex}
 
-/* Sidebar */
-.sb{width:var(--sbw);background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:transform .25s}
-.sbhead{padding:18px 16px;border-bottom:1px solid var(--border)}
-.sbhead h2{font-size:15px;font-weight:700;color:var(--primary)}
-.sbhead p{font-size:11px;color:var(--t3);margin-top:1px}
-.sbuser{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.uav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
-.sbuser .nm{font-size:13px;font-weight:600}
-.sbuser .rl{font-size:11px;color:var(--t3)}
-nav{flex:1;padding:6px 0;overflow-y:auto}
-.ni{display:flex;align-items:center;gap:9px;padding:10px 16px;cursor:pointer;color:var(--t2);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent}
-.ni:hover{background:var(--pl);color:var(--primary)}
-.ni.on{background:var(--pl);color:var(--primary);border-left-color:var(--primary)}
-.ni .ic{font-size:16px;width:20px;text-align:center}
-.sbfoot{padding:12px 16px;border-top:1px solid var(--border)}
+/* ── Sidebar ── */
+.sb{width:var(--sb-w);background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 
-/* Mobile topbar */
-.topbar{display:none;position:fixed;top:0;left:0;right:0;height:54px;background:#fff;border-bottom:1px solid var(--border);z-index:150;align-items:center;padding:0 16px;justify-content:space-between}
-.topbar h2{font-size:15px;font-weight:700;color:var(--primary)}
-.burger{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px}
-.burger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s}
-.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.sbhead{padding:20px 20px 16px;border-bottom:1px solid var(--line)}
+.sbhead-brand{display:flex;align-items:center;gap:10px}
+.sbhead-icon{width:36px;height:36px;background:var(--indigo);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
+.sbhead-icon i{color:#fff;font-size:16px}
+.sbhead h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.sbhead p{font-size:11px;color:var(--ink-4);margin-top:1px}
+
+.sbuser{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.uav{width:34px;height:34px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.02em}
+.sbuser .nm{font-size:13px;font-weight:600;color:var(--ink)}
+.sbuser .rl{font-size:11px;color:var(--ink-3)}
+
+nav{flex:1;padding:8px 10px;overflow-y:auto}
+.nav-section{font-size:10.5px;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;padding:10px 10px 4px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;color:var(--ink-3);font-size:13px;font-weight:500;transition:all .15s;border-radius:var(--r-sm);margin-bottom:1px}
+.ni:hover{background:var(--canvas);color:var(--ink)}
+.ni.on{background:var(--indigo-lt);color:var(--indigo);font-weight:600}
+.ni .ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.ni-badge{margin-left:auto;background:var(--indigo);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px}
+
+.sbfoot{padding:14px 20px;border-top:1px solid var(--line)}
+.sbfoot .logout-btn{width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--ink-3);transition:all .18s}
+.sbfoot .logout-btn:hover{background:var(--rose-lt);color:var(--rose);border-color:rgba(225,29,72,.2)}
+.sbfoot .logout-btn i{font-size:13px}
+
+/* ── Topbar (mobile) ── */
+.topbar{display:none;position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--line);z-index:150;align-items:center;padding:0 18px;justify-content:space-between}
+.topbar-brand{display:flex;align-items:center;gap:8px}
+.topbar-brand .icon{width:28px;height:28px;background:var(--indigo);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.topbar-brand .icon i{color:#fff;font-size:13px}
+.topbar h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.burger{background:none;border:none;cursor:pointer;padding:7px;display:flex;flex-direction:column;gap:5px;border-radius:6px;transition:background .15s}
+.burger:hover{background:var(--canvas)}
+.burger span{display:block;width:20px;height:1.5px;background:var(--ink-2);border-radius:2px;transition:all .25s}
+.burger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .burger.open span:nth-child(2){opacity:0}
-.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-.overbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:190}
+.burger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+.overbg{display:none;position:fixed;inset:0;background:rgba(13,17,23,.5);z-index:190;backdrop-filter:blur(2px)}
 .overbg.show{display:block}
 
-/* Main */
-.main{margin-left:var(--sbw);flex:1;padding:24px;min-height:100vh}
-.ph{margin-bottom:22px}
-.ph h1{font-size:21px;font-weight:700}
-.ph p{font-size:13px;color:var(--t2);margin-top:2px}
+/* ── Main ── */
+.main{margin-left:var(--sb-w);flex:1;padding:28px 28px 40px;min-height:100vh}
 
-/* Stats */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin-bottom:22px}
-.sc{background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
-.sc .lb{font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
-.sc .vl{font-size:26px;font-weight:700;margin:3px 0}
-.sc .sb2{font-size:12px;color:var(--t2)}
-.sc.blue .vl{color:var(--primary)}.sc.green .vl{color:var(--green)}
-.sc.orange .vl{color:var(--orange)}.sc.purple .vl{color:var(--purple)}
+.ph{margin-bottom:24px}
+.ph h1{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.03em;line-height:1.2}
+.ph p{font-size:13.5px;color:var(--ink-3);margin-top:4px}
 
-/* Card */
-.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:18px}
-.ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.ch h3{font-size:14px;font-weight:700}
-.cb{padding:18px}
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:24px}
+.sc{background:var(--surface);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow-xs);border:1px solid var(--line);transition:box-shadow .2s}
+.sc:hover{box-shadow:var(--shadow-sm)}
+.sc-icon{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:15px}
+.sc .lb{font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.sc .vl{font-family:'Sora',sans-serif;font-size:28px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.sc .sb2{font-size:12px;color:var(--ink-3);margin-top:3px}
 
-/* Events grid */
-.eg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
-.ec{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;transition:transform .2s,box-shadow .2s}
-.ec:hover{transform:translateY(-3px);box-shadow:var(--shl)}
-.estrip{height:7px}
-.eb{padding:14px}
-.ecat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
-.etitle{font-size:14px;font-weight:700;color:var(--text);margin-bottom:7px;line-height:1.3}
-.emeta{font-size:12px;color:var(--t2);display:flex;flex-direction:column;gap:3px}
-.emeta span{display:flex;align-items:center;gap:4px}
-.ef{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.capbar{height:4px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px}
-.capfill{height:100%;border-radius:3px;background:var(--green);transition:width .5s}
-.capfill.warn{background:var(--orange)}.capfill.full{background:var(--red)}
+.sc.blue .sc-icon{background:var(--indigo-lt);color:var(--indigo)}
+.sc.blue .vl{color:var(--indigo)}
+.sc.green .sc-icon{background:var(--emerald-lt);color:var(--emerald)}
+.sc.green .vl{color:var(--emerald)}
+.sc.orange .sc-icon{background:var(--amber-lt);color:var(--amber)}
+.sc.orange .vl{color:var(--amber)}
+.sc.purple .sc-icon{background:var(--violet-lt);color:var(--violet)}
+.sc.purple .vl{color:var(--violet)}
 
-/* Badges */
-.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.bg{background:var(--gl);color:var(--green)}.bo{background:var(--ol);color:var(--orange)}
-.br{background:var(--rl);color:var(--red)}.bb{background:var(--pl);color:var(--primary)}
-.bp{background:var(--pul);color:var(--purple)}
+/* ── Card ── */
+.card{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow-xs);border:1px solid var(--line);overflow:hidden;margin-bottom:18px}
+.ch{padding:14px 20px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:var(--surface)}
+.ch h3{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:7px}
+.ch h3 i{color:var(--indigo);font-size:14px}
+.cb{padding:20px}
 
-/* Table */
+/* ── Event Cards ── */
+.eg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.ec{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
+.ec:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:rgba(79,70,229,.15)}
+.estrip{height:4px}
+.eb{padding:16px 16px 12px}
+.ecat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ecat{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.etitle{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.35}
+.emeta{font-size:12.5px;color:var(--ink-3);display:flex;flex-direction:column;gap:5px}
+.emeta span{display:flex;align-items:center;gap:6px}
+.emeta i{font-size:12px;color:var(--ink-4);width:13px;text-align:center}
+.ef{padding:10px 16px 13px;border-top:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--canvas)}
+.capbar{height:3px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px}
+.capfill{height:100%;border-radius:99px;background:var(--emerald);transition:width .5s}
+.capfill.warn{background:var(--amber)}.capfill.full{background:var(--rose)}
+.cap-label{font-size:11px;color:var(--ink-4);margin-top:4px}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;letter-spacing:.01em}
+.bg{background:var(--emerald-lt);color:var(--emerald)}
+.bo{background:var(--amber-lt);color:var(--amber)}
+.br{background:var(--rose-lt);color:var(--rose)}
+.bb{background:var(--indigo-lt);color:var(--indigo)}
+.bp{background:var(--violet-lt);color:var(--violet)}
+.bs{background:var(--sky-lt);color:var(--sky-dk)}
+
+/* ── Table ── */
 table{width:100%;border-collapse:collapse}
-th{background:var(--surface);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
-td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+th{background:var(--canvas);padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line)}
+td{padding:12px 16px;border-bottom:1px solid var(--line-2);font-size:13px;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--bg)}
+tbody tr{transition:background .12s}
+tbody tr:hover td{background:var(--canvas)}
 
-/* Modal */
-.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+/* ── Modals ── */
+.mov{display:none;position:fixed;inset:0;background:rgba(13,17,23,.55);z-index:1000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
 .mov.open{display:flex}
-.modal{background:#fff;border-radius:16px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:var(--shl)}
-.mh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
-.mh h3{font-size:16px;font-weight:700}
-.mc{background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);line-height:1}
-.mb{padding:22px}
-.mf{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.modal{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+.mh{padding:18px 24px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.mh h3{font-size:16px;font-weight:700;color:var(--ink);font-family:'Sora',sans-serif;letter-spacing:-.02em}
+.mc{background:var(--canvas);border:1px solid var(--line);border-radius:6px;font-size:14px;cursor:pointer;color:var(--ink-3);line-height:1;padding:5px 7px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.mc:hover{background:var(--rose-lt);color:var(--rose);border-color:rgba(225,29,72,.2)}
+.mb{padding:24px}
+.mf{padding:14px 24px;border-top:1px solid var(--line-2);display:flex;justify-content:flex-end;gap:10px;background:var(--canvas)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 .fg .full{grid-column:1/-1}
 
-/* Filter */
-.fbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.fchip{padding:5px 13px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--t2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
-.fchip.on,.fchip:hover{border-color:var(--primary);background:var(--pl);color:var(--primary)}
+/* ── Filter bar ── */
+.fbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.fchip{padding:6px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-3);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s}
+.fchip.on{border-color:var(--indigo);background:var(--indigo-lt);color:var(--indigo);font-weight:600}
+.fchip:hover:not(.on){border-color:var(--indigo);color:var(--indigo)}
 
-/* Stars */
-.stars{display:flex;gap:4px;font-size:22px;cursor:pointer;margin:6px 0}
-.star{color:#d1d5db;transition:color .15s;user-select:none}
+/* ── Stars ── */
+.stars{display:flex;gap:5px;font-size:24px;cursor:pointer;margin:6px 0}
+.star{color:var(--line);transition:color .12s;user-select:none}
 .star.lit{color:#f59e0b}
 
-/* Rec pill */
-.recpill{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--pul),#ede9fe);color:var(--purple);border:1px solid #c4b5fd;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:6px}
+/* ── AI Rec pill ── */
+.recpill{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--violet-lt),#ede9fe);color:var(--violet);border:1px solid rgba(124,58,237,.2);padding:4px 11px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.recpill i{font-size:11px}
 
-/* QR Display (organizer side) */
+/* ── QR Display ── */
 .qr-display-box{text-align:center;padding:24px 20px}
-.qr-canvas-wrap{width:200px;height:200px;margin:0 auto 16px;background:#fff;border:3px solid #1e293b;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.qr-canvas-wrap{width:200px;height:200px;margin:0 auto 18px;background:#fff;border:2px solid var(--line);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:var(--shadow-sm)}
 canvas#qrCanvas{display:block}
-.qr-validity{display:inline-flex;align-items:center;gap:6px;background:var(--gl);border:1px solid #bbf7d0;color:var(--green);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:10px}
+.qr-validity{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:99px;font-size:12px;font-weight:600;margin-bottom:14px}
 
-/* QR Scanner (student side) */
-.scanner-wrap{position:relative;width:100%;max-width:300px;margin:0 auto;border-radius:12px;overflow:hidden;background:#000}
-#scanVideo{width:100%;display:block;border-radius:12px}
+/* ── QR Scanner ── */
+.scanner-wrap{position:relative;width:100%;max-width:300px;margin:0 auto;border-radius:var(--r-lg);overflow:hidden;background:#000;box-shadow:var(--shadow)}
+#scanVideo{width:100%;display:block;border-radius:var(--r-lg)}
 .scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-.scan-frame{width:180px;height:180px;border:3px solid #22c55e;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);position:relative}
-.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:28px;height:28px;border-color:#22c55e;border-style:solid}
-.scan-frame::before{top:-3px;left:-3px;border-width:4px 0 0 4px;border-radius:4px 0 0 0}
-.scan-frame::after{bottom:-3px;right:-3px;border-width:0 4px 4px 0;border-radius:0 0 4px 0}
-.scan-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#22c55e,transparent);animation:scanAnim 2s ease-in-out infinite}
+.scan-frame{width:175px;height:175px;border-radius:var(--r-sm);box-shadow:0 0 0 9999px rgba(0,0,0,.55);position:relative;border:2.5px solid #22c55e}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:26px;height:26px;border-color:#22c55e;border-style:solid}
+.scan-frame::before{top:-2.5px;left:-2.5px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.scan-frame::after{bottom:-2.5px;right:-2.5px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#22c55e,transparent);animation:scanAnim 2s ease-in-out infinite;border-radius:2px}
 @keyframes scanAnim{0%,100%{top:10px}50%{top:calc(100% - 12px)}}
 
-/* Notif */
-.notif{position:fixed;top:16px;right:16px;background:var(--green);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;transform:translateX(240px);opacity:0;transition:all .3s;box-shadow:var(--shl);max-width:320px}
+/* ── Notification toast ── */
+.notif{position:fixed;top:18px;right:18px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:9999;transform:translateX(260px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-lg);max-width:320px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.1)}
 .notif.show{transform:translateX(0);opacity:1}
-.notif.err{background:var(--red)}.notif.inf{background:var(--primary)}
+.notif.err{background:var(--rose)}.notif.inf{background:var(--indigo)}
 
-/* Spinner */
-.spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+/* ── Spinner ── */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.spind{border-color:var(--border);border-top-color:var(--primary)}
-.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t2);gap:10px}
-.empty{text-align:center;padding:36px 20px;color:var(--t3)}
-.empty .ei{font-size:36px;margin-bottom:8px}
+.spind{border-color:var(--line);border-top-color:var(--indigo)}
+.loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--ink-3);gap:10px;font-size:13.5px}
+.empty{text-align:center;padding:40px 20px;color:var(--ink-4)}
+.empty .ei{font-size:32px;margin-bottom:8px;opacity:.5}
+.empty p{font-size:14px;color:var(--ink-3)}
+.empty .esub{font-size:12.5px;color:var(--ink-4);margin-top:4px}
 
-/* Utils */
+/* ── Section header inside page ── */
+.section-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.section-head h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+
+/* ── Inline utils ── */
 .flex{display:flex}.aic{align-items:center}.jb{justify-content:space-between}
-.gap2{gap:8px}.gap3{gap:12px}.fwrap{flex-wrap:wrap}
-.t2{color:var(--t2)}.t3{color:var(--t3)}.tsm{font-size:12px}.bold{font-weight:700}
-.mt1{margin-top:4px}.mt2{margin-top:8px}.mt3{margin-top:12px}.mb2{margin-bottom:8px}
+.gap1{gap:4px}.gap2{gap:8px}.gap3{gap:12px}.fwrap{flex-wrap:wrap}
+.t2{color:var(--ink-2)}.t3{color:var(--ink-3)}.t4{color:var(--ink-4)}
+.tsm{font-size:12.5px}.txs{font-size:12px}.bold{font-weight:600}
+.sora{font-family:'Sora',sans-serif}
+.mt1{margin-top:4px}.mt2{margin-top:8px}.mt3{margin-top:16px}.mb1{margin-bottom:4px}.mb2{margin-bottom:8px}
 
-/* Responsive */
+/* ── Avatar ── */
+.av-circle{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0}
+
+/* ── Info banner ── */
+.info-banner{background:var(--indigo-lt);border:1px solid rgba(79,70,229,.2);border-radius:var(--r);padding:12px 14px;font-size:13px;color:var(--indigo);display:flex;align-items:flex-start;gap:8px}
+.info-banner i{flex-shrink:0;margin-top:2px}
+.warn-banner{background:var(--amber-lt);border:1px solid rgba(217,119,6,.2);border-radius:var(--r);padding:12px 14px;font-size:13px;color:var(--amber);display:flex;align-items:flex-start;gap:8px}
+
+/* ── Prog bar ── */
+.prog-row{margin-bottom:14px}
+.prog-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.prog-bar{height:7px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--indigo),var(--sky))}
+
+/* ── Divider ── */
+.div-line{height:1px;background:var(--line-2);margin:16px 0}
+
+/* ── Action row ── */
+.act-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line-2)}
+.act-row:last-child{border-bottom:none}
+
+/* ══ RESPONSIVE ══ */
 @media(max-width:768px){
   .sb{transform:translateX(-100%)}
   .sb.open{transform:translateX(0)}
   .topbar{display:flex}
-  .main{margin-left:0;padding:68px 14px 20px}
+  .main{margin-left:0;padding:calc(var(--topbar-h) + 18px) 16px 28px}
   .fg{grid-template-columns:1fr}
   .eg{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
   table{display:block;overflow-x:auto;white-space:nowrap}
+  .abox{padding:28px 24px}
 }
 @media(min-width:769px){
   .topbar{display:none!important}
   .sb{transform:none!important}
 }
+
+/* ══ Page fade-in ══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.main>*{animation:fadeUp .28s ease both}
 </style>
 </head>
 <body>
 
 <div class="notif" id="notif"></div>
 
-<!-- ════ AUTH SCREEN ════ -->
+<!-- ════ AUTH ════ -->
 <div id="authScreen">
   <div class="abox">
     <div class="alogo">
-      <div class="av">🎓</div>
+      <div class="alogo-badge">
+        <span class="ic">🎓</span>
+        <span>Vardhaman College of Engineering</span>
+      </div>
       <h1>VCE Events</h1>
-      <p>Vardhaman College of Engineering</p>
+      <p>Campus Event Management System</p>
     </div>
 
     <!-- LOGIN -->
     <div id="loginBox">
       <div class="atabs">
-        <div class="atab on"  onclick="setLoginRole('student',this)">👨‍🎓 Student</div>
-        <div class="atab"     onclick="setLoginRole('organizer',this)">📋 Organizer</div>
-        <div class="atab"     onclick="setLoginRole('admin',this)">⚙️ Admin</div>
+        <div class="atab on" onclick="setLoginRole('student',this)"><i class="fa-solid fa-user-graduate"></i> Student</div>
+        <div class="atab"    onclick="setLoginRole('organizer',this)"><i class="fa-solid fa-clipboard-list"></i> Organizer</div>
+        <div class="atab"    onclick="setLoginRole('admin',this)"><i class="fa-solid fa-gear"></i> Admin</div>
       </div>
-      <label>Email</label>
-      <input type="email" id="lEmail" placeholder="your@email.com" autocomplete="email">
+      <label>Email Address</label>
+      <input type="email" id="lEmail" placeholder="your@vceguide.com" autocomplete="email">
       <label>Password</label>
-      <input type="password" id="lPass" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="password" id="lPass" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       <div class="errmsg" id="lErr"></div>
-      <button class="btn btn-p" id="lBtn" onclick="doLogin()">Login →</button>
-      <div class="swlink">No account? <a onclick="switchAuth('signup')">Sign up free</a></div>
+      <button class="btn btn-p" id="lBtn" onclick="doLogin()"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</button>
+      <div class="swlink">Don't have an account? <a onclick="switchAuth('signup')">Create one</a></div>
     </div>
 
     <!-- SIGN UP -->
     <div id="signupBox">
       <label>Full Name</label>
       <input type="text" id="sName" placeholder="e.g. Arjun Kumar">
-      <label>Email</label>
-      <input type="email" id="sEmail" placeholder="your@email.com">
+      <label>Email Address</label>
+      <input type="email" id="sEmail" placeholder="your@vceguide.com">
       <label>Password</label>
       <input type="password" id="sPass" placeholder="Min 6 characters">
       <label>I am a</label>
       <div class="rpick">
-        <div class="ropt on" onclick="setSignupRole('student',this)"><span class="ri">👨‍🎓</span>Student</div>
+        <div class="ropt on" onclick="setSignupRole('student',this)"><span class="ri">🎓</span>Student</div>
         <div class="ropt"    onclick="setSignupRole('organizer',this)"><span class="ri">📋</span>Organizer</div>
         <div class="ropt"    onclick="setSignupRole('admin',this)"><span class="ri">⚙️</span>Admin</div>
       </div>
@@ -270,8 +409,8 @@ canvas#qrCanvas{display:block}
         </div>
       </div>
       <div class="errmsg" id="sErr"></div>
-      <button class="btn btn-p" id="sBtn" onclick="doSignup()">Create Account →</button>
-      <div class="swlink">Have an account? <a onclick="switchAuth('login')">Login</a></div>
+      <button class="btn btn-p" id="sBtn" onclick="doSignup()"><i class="fa-solid fa-user-plus"></i> Create Account</button>
+      <div class="swlink">Already have an account? <a onclick="switchAuth('login')">Sign in</a></div>
     </div>
   </div>
 </div>
@@ -279,7 +418,10 @@ canvas#qrCanvas{display:block}
 <!-- ════ APP SHELL ════ -->
 <div id="app">
   <div class="topbar">
-    <h2>🎓 VCE Events</h2>
+    <div class="topbar-brand">
+      <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
+      <h2>VCE Events</h2>
+    </div>
     <button class="burger" id="burger" onclick="toggleSB()">
       <span></span><span></span><span></span>
     </button>
@@ -288,16 +430,23 @@ canvas#qrCanvas{display:block}
 
   <div class="sb" id="sidebar">
     <div class="sbhead">
-      <h2>🎓 VCE Events</h2>
-      <p>Event Management System</p>
+      <div class="sbhead-brand">
+        <div class="sbhead-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        <div>
+          <h2>VCE Events</h2>
+          <p>Event Management</p>
+        </div>
+      </div>
     </div>
     <div class="sbuser">
-      <div class="uav" id="sbAv">U</div>
+      <div class="uav av-circle" id="sbAv" style="width:34px;height:34px;font-size:13px">U</div>
       <div><div class="nm" id="sbName">User</div><div class="rl" id="sbRole">Role</div></div>
     </div>
     <nav id="sbNav"></nav>
     <div class="sbfoot">
-      <button class="btn btn-o btn-sm" onclick="logout()" style="width:100%">Logout</button>
+      <button class="logout-btn" onclick="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </button>
     </div>
   </div>
 
@@ -306,10 +455,10 @@ canvas#qrCanvas{display:block}
 
 <!-- ════ MODALS ════ -->
 
-<!-- Register for event -->
+<!-- Register -->
 <div class="mov" id="regModal">
   <div class="modal">
-    <div class="mh"><h3 id="regMTitle">Register for Event</h3><button class="mc" onclick="closeModal('regModal')">✕</button></div>
+    <div class="mh"><h3 id="regMTitle">Register for Event</h3><button class="mc" onclick="closeModal('regModal')"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="mb" id="regMBody"></div>
     <div class="mf">
       <button class="btn btn-o btn-sm" onclick="closeModal('regModal')">Cancel</button>
@@ -318,10 +467,10 @@ canvas#qrCanvas{display:block}
   </div>
 </div>
 
-<!-- Create / Edit event -->
+<!-- Create / Edit Event -->
 <div class="mov" id="evModal">
   <div class="modal">
-    <div class="mh"><h3 id="evModalTitle">Create New Event</h3><button class="mc" onclick="closeModal('evModal')">✕</button></div>
+    <div class="mh"><h3 id="evModalTitle">Create New Event</h3><button class="mc" onclick="closeModal('evModal')"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="mb">
       <div class="fg">
         <div class="full"><label>Event Title *</label><input type="text" id="evTitle" placeholder="e.g. Tech Fest 2025"></div>
@@ -344,50 +493,49 @@ canvas#qrCanvas{display:block}
   </div>
 </div>
 
-<!-- QR Display Modal (Organizer/Admin) -->
+<!-- QR Display -->
 <div class="mov" id="qrDisplayModal">
   <div class="modal" style="max-width:400px">
-    <div class="mh"><h3>📱 Event QR Code</h3><button class="mc" onclick="closeQRDisplay()">✕</button></div>
+    <div class="mh"><h3><i class="fa-solid fa-qrcode" style="color:var(--indigo)"></i> Event QR Code</h3><button class="mc" onclick="closeQRDisplay()"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="qr-display-box">
-      <div class="qr-validity" id="qrValidityBadge">✅ Valid for Today</div>
+      <div class="qr-validity" id="qrValidityBadge">Fetching…</div>
       <div class="qr-canvas-wrap"><canvas id="qrCanvas" width="180" height="180"></canvas></div>
-      <div id="qrDispName" style="font-weight:700;font-size:15px;margin-bottom:4px"></div>
-      <div id="qrDispDate" style="color:var(--t2);font-size:13px;margin-bottom:6px"></div>
-      <div id="qrDispToken" style="font-family:monospace;font-size:10px;color:var(--t3);word-break:break-all;background:var(--surface);padding:7px 10px;border-radius:6px;margin-top:8px"></div>
-      <p class="tsm t2 mt2">Show this QR to students at the event venue. Students scan it with their app to mark attendance.</p>
+      <div id="qrDispName" style="font-weight:700;font-size:16px;margin-bottom:4px;font-family:'Sora',sans-serif"></div>
+      <div id="qrDispDate" style="color:var(--ink-3);font-size:13px;margin-bottom:10px"></div>
+      <div id="qrDispToken" style="font-family:monospace;font-size:10px;color:var(--ink-4);word-break:break-all;background:var(--canvas);padding:8px 11px;border-radius:var(--r-sm);border:1px solid var(--line);margin-top:6px;text-align:left"></div>
+      <p class="tsm t3 mt2" style="font-size:12px;">Show this QR to students at the venue. They scan it to mark attendance.</p>
     </div>
     <div class="mf"><button class="btn btn-o btn-sm" onclick="closeQRDisplay()">Close</button></div>
   </div>
 </div>
 
-<!-- QR Scanner Modal (Student) -->
+<!-- QR Scanner -->
 <div class="mov" id="qrScanModal">
   <div class="modal" style="max-width:400px">
-    <div class="mh"><h3>📷 Scan QR Code</h3><button class="mc" onclick="closeScanner()">✕</button></div>
+    <div class="mh"><h3><i class="fa-solid fa-camera" style="color:var(--emerald)"></i> Scan QR Code</h3><button class="mc" onclick="closeScanner()"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="mb" style="text-align:center">
-      <div id="scanEventName" style="font-weight:700;font-size:15px;margin-bottom:14px"></div>
+      <div id="scanEventName" style="font-weight:700;font-size:15px;margin-bottom:16px;font-family:'Sora',sans-serif;color:var(--ink)"></div>
       <div class="scanner-wrap" id="scannerWrap">
         <video id="scanVideo" playsinline muted></video>
         <div class="scan-overlay"><div class="scan-frame"><div class="scan-line"></div></div></div>
       </div>
-      <p class="tsm t2 mt2" id="scanStatus">Align the QR code within the frame</p>
-      <!-- Manual entry fallback -->
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-        <p class="tsm t3 mb2">Or enter QR token manually (if camera unavailable):</p>
+      <p class="tsm t3 mt2" id="scanStatus" style="font-size:13px">Align the QR code within the frame</p>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)">
+        <p class="txs t4 mb2">Or enter token manually if camera is unavailable:</p>
         <input type="text" id="manualToken" placeholder="Paste QR token here">
-        <button class="btn btn-p btn-sm" onclick="submitManualToken()" style="width:100%;margin-top:8px">Submit Token</button>
+        <button class="btn btn-p btn-sm" onclick="submitManualToken()" style="width:100%;margin-top:10px">Submit Token</button>
       </div>
     </div>
     <div class="mf"><button class="btn btn-o btn-sm" onclick="closeScanner()">Cancel</button></div>
   </div>
 </div>
 
-<!-- Feedback modal -->
+<!-- Feedback -->
 <div class="mov" id="fbModal">
   <div class="modal">
-    <div class="mh"><h3>Post-Event Feedback</h3><button class="mc" onclick="closeModal('fbModal')">✕</button></div>
+    <div class="mh"><h3><i class="fa-solid fa-star" style="color:#f59e0b"></i> Event Feedback</h3><button class="mc" onclick="closeModal('fbModal')"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="mb">
-      <div id="fbEvName" style="font-weight:700;font-size:15px;margin-bottom:14px"></div>
+      <div id="fbEvName" style="font-weight:700;font-size:15px;margin-bottom:16px;font-family:'Sora',sans-serif;color:var(--ink)"></div>
       <label>Overall Rating</label>
       <div class="stars">
         <span class="star" onclick="setRating(1)">★</span><span class="star" onclick="setRating(2)">★</span>
@@ -395,7 +543,7 @@ canvas#qrCanvas{display:block}
         <span class="star" onclick="setRating(5)">★</span>
       </div>
       <label>Comments</label>
-      <textarea id="fbComment" placeholder="Share your experience..."></textarea>
+      <textarea id="fbComment" placeholder="Share your experience about this event…"></textarea>
     </div>
     <div class="mf">
       <button class="btn btn-o btn-sm" onclick="closeModal('fbModal')">Cancel</button>
@@ -404,41 +552,32 @@ canvas#qrCanvas{display:block}
   </div>
 </div>
 
-<!-- jsQR for QR decoding -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
 <script>
-// ══════════════════ CONFIG ══════════════════
-const API = 'https://college-event-management-production.up.railway.app/api';
+// ══ CONFIG ══
+const API = 'http://localhost:3001/api';
 
-// ══════════════════ STATE ══════════════════
-let currentUser = null;
-let token = localStorage.getItem('vce_token') || null;
+// ══ STATE ══
+let currentUser = null, token = localStorage.getItem('vce_token') || null;
 let loginRole = 'student', signupRole = 'student';
 let selectedRating = 0, currentFbEid = null, currentFilter = 'All';
 let editingEventId = null;
+let scanStream = null, scanAnimFrame = null, scanEventId = null, scanCanvas = null, scanCtx = null;
 
-// Scanner state
-let scanStream = null;
-let scanAnimFrame = null;
-let scanEventId = null;
-let scanCanvas = null;
-let scanCtx = null;
-
-// ══════════════════ API HELPER ══════════════════
+// ══ API ══
 async function api(path, opts = {}) {
   const h = { 'Content-Type': 'application/json' };
   if (token) h['Authorization'] = 'Bearer ' + token;
-  const r = await fetch(API + path, { ...opts, headers: { ...h, ...(opts.headers || {}) } });
+  const r = await fetch(API + path, { ...opts, headers: { ...h, ...(opts.headers||{}) } });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'HTTP ' + r.status);
   return d;
 }
 
-// ══════════════════ AUTH UI ══════════════════
+// ══ AUTH UI ══
 function switchAuth(to) {
-  document.getElementById('loginBox').style.display  = to === 'login'  ? 'block' : 'none';
-  document.getElementById('signupBox').style.display = to === 'signup' ? 'block' : 'none';
+  document.getElementById('loginBox').style.display  = to==='login'  ? 'block' : 'none';
+  document.getElementById('signupBox').style.display = to==='signup' ? 'block' : 'none';
 }
 function setLoginRole(r, el) {
   loginRole = r;
@@ -450,7 +589,7 @@ function setSignupRole(r, el) {
   el.closest('.rpick').querySelectorAll('.ropt').forEach(t => t.classList.remove('on'));
   el.classList.add('on');
   const yw = document.getElementById('sYearWrap');
-  if (yw) yw.style.display = (r === 'organizer' || r === 'admin') ? 'none' : 'block';
+  if (yw) yw.style.display = (r==='organizer'||r==='admin') ? 'none' : 'block';
 }
 
 async function doLogin() {
@@ -458,48 +597,37 @@ async function doLogin() {
   const pass  = document.getElementById('lPass').value;
   const errEl = document.getElementById('lErr');
   errEl.classList.remove('show');
-  if (!email || !pass) { errEl.textContent = 'Enter email and password'; errEl.classList.add('show'); return; }
+  if (!email||!pass) { errEl.textContent='Please enter your email and password'; errEl.classList.add('show'); return; }
   const btn = document.getElementById('lBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Logging in…';
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Signing in…';
   try {
-    const d = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pass, role: loginRole }) });
-    token = d.token;
-    localStorage.setItem('vce_token', token);
-    currentUser = d.user;
-    localStorage.setItem('vce_user', JSON.stringify(d.user));
+    const d = await api('/auth/login',{method:'POST',body:JSON.stringify({email,password:pass,role:loginRole})});
+    token=d.token; localStorage.setItem('vce_token',token);
+    currentUser=d.user; localStorage.setItem('vce_user',JSON.stringify(d.user));
     enterApp();
-  } catch (e) {
-    errEl.textContent = e.message; errEl.classList.add('show');
-  } finally {
-    btn.disabled = false; btn.innerHTML = 'Login →';
-  }
+  } catch(e) { errEl.textContent=e.message; errEl.classList.add('show'); }
+  finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In'; }
 }
 
 async function doSignup() {
   const name   = document.getElementById('sName').value.trim();
   const email  = document.getElementById('sEmail').value.trim();
   const pass   = document.getElementById('sPass').value;
-  const branch = document.getElementById('sBranch').value.trim() || 'CSE';
-  const year   = parseInt(document.getElementById('sYear')?.value) || 1;
+  const branch = document.getElementById('sBranch').value.trim()||'CSE';
+  const year   = parseInt(document.getElementById('sYear')?.value)||1;
   const errEl  = document.getElementById('sErr');
   errEl.classList.remove('show');
-  if (!name || !email || !pass) { errEl.textContent = 'Fill all required fields'; errEl.classList.add('show'); return; }
-  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.classList.add('show'); return; }
+  if (!name||!email||!pass) { errEl.textContent='Please fill in all required fields'; errEl.classList.add('show'); return; }
+  if (pass.length<6) { errEl.textContent='Password must be at least 6 characters'; errEl.classList.add('show'); return; }
   const btn = document.getElementById('sBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Creating…';
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Creating…';
   try {
-    const d = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password: pass, role: signupRole, branch, year }) });
-    token = d.token;
-    localStorage.setItem('vce_token', token);
-    currentUser = d.user;
-    localStorage.setItem('vce_user', JSON.stringify(d.user));
-    enterApp();
-    showNotif('🎉 Account created! Welcome to VCE Events.');
-  } catch (e) {
-    errEl.textContent = e.message; errEl.classList.add('show');
-  } finally {
-    btn.disabled = false; btn.innerHTML = 'Create Account →';
-  }
+    const d = await api('/auth/register',{method:'POST',body:JSON.stringify({name,email,password:pass,role:signupRole,branch,year})});
+    token=d.token; localStorage.setItem('vce_token',token);
+    currentUser=d.user; localStorage.setItem('vce_user',JSON.stringify(d.user));
+    enterApp(); showNotif('🎉 Welcome to VCE Events!');
+  } catch(e) { errEl.textContent=e.message; errEl.classList.add('show'); }
+  finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-user-plus"></i> Create Account'; }
 }
 
 function enterApp() {
@@ -509,23 +637,22 @@ function enterApp() {
 }
 
 function logout() {
-  currentUser = null; token = null;
-  localStorage.removeItem('vce_token');
-  localStorage.removeItem('vce_user');
+  currentUser=null; token=null;
+  localStorage.removeItem('vce_token'); localStorage.removeItem('vce_user');
   closeScanner();
   document.getElementById('app').classList.remove('on');
   document.getElementById('authScreen').classList.remove('hidden');
   switchAuth('login');
-  document.getElementById('lPass').value = '';
+  document.getElementById('lPass').value='';
   document.getElementById('lErr').classList.remove('show');
   closeSB();
 }
 
-// ══════════════════ MOBILE SIDEBAR ══════════════════
+// ══ SIDEBAR MOBILE ══
 function toggleSB() {
   const open = document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overbg').classList.toggle('show', open);
-  document.getElementById('burger').classList.toggle('open', open);
+  document.getElementById('overbg').classList.toggle('show',open);
+  document.getElementById('burger').classList.toggle('open',open);
 }
 function closeSB() {
   document.getElementById('sidebar').classList.remove('open');
@@ -533,100 +660,106 @@ function closeSB() {
   document.getElementById('burger').classList.remove('open');
 }
 
-// ══════════════════ APP INIT ══════════════════
+// ══ APP INIT ══
 function initApp() {
-  const colors = { student: '#2563eb', organizer: '#16a34a', admin: '#7c3aed' };
-  const name = currentUser.name || currentUser.email || 'User';
-
+  const roleColors = { student:'#4f46e5', organizer:'#059669', admin:'#7c3aed' };
+  const name = currentUser.name||currentUser.email||'User';
   document.getElementById('sbAv').textContent = name.charAt(0).toUpperCase();
-  document.getElementById('sbAv').style.background = colors[currentUser.role] || '#2563eb';
+  document.getElementById('sbAv').style.background = roleColors[currentUser.role]||'#4f46e5';
   document.getElementById('sbName').textContent = name;
-  document.getElementById('sbRole').textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+  document.getElementById('sbRole').textContent = currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1);
 
   const navMap = {
     student: [
-      { ic: '🏠', lb: 'Dashboard',         pg: 'studentDash' },
-      { ic: '📅', lb: 'Browse Events',      pg: 'browseEvents' },
-      { ic: '🎫', lb: 'My Registrations',   pg: 'myRegs' },
-      { ic: '📷', lb: 'Scan QR / Attend',   pg: 'scanPage' },
-      { ic: '🤖', lb: 'AI Recommendations', pg: 'aiRec' },
-      { ic: '⭐', lb: 'Give Feedback',      pg: 'myFeedback' },
+      { ic:'fa-solid fa-house', lb:'Dashboard',         pg:'studentDash' },
+      { ic:'fa-solid fa-calendar-days', lb:'Browse Events',pg:'browseEvents' },
+      { ic:'fa-solid fa-ticket',  lb:'My Registrations', pg:'myRegs' },
+      { ic:'fa-solid fa-camera',  lb:'Scan QR / Attend', pg:'scanPage' },
+      { ic:'fa-solid fa-robot',   lb:'AI Picks for You', pg:'aiRec' },
+      { ic:'fa-solid fa-star',    lb:'Give Feedback',    pg:'myFeedback' },
     ],
     organizer: [
-      { ic: '🏠', lb: 'Dashboard',     pg: 'orgDash' },
-      { ic: '📅', lb: 'My Events',     pg: 'myEvents' },
-      { ic: '➕', lb: 'Create Event',  pg: 'createPage' },
-      { ic: '👥', lb: 'Registrations', pg: 'orgRegs' },
-      { ic: '📊', lb: 'Attendance',    pg: 'orgAttend' },
+      { ic:'fa-solid fa-house',        lb:'Dashboard',       pg:'orgDash' },
+      { ic:'fa-solid fa-calendar-days',lb:'My Events',        pg:'myEvents' },
+      { ic:'fa-solid fa-plus',         lb:'Create Event',     pg:'createPage' },
+      { ic:'fa-solid fa-users',        lb:'Registrations',    pg:'orgRegs' },
+      { ic:'fa-solid fa-chart-bar',    lb:'Attendance',       pg:'orgAttend' },
     ],
     admin: [
-      { ic: '🏠', lb: 'Dashboard',        pg: 'adminDash' },
-      { ic: '📅', lb: 'All Events',        pg: 'adminEvents' },
-      { ic: '👤', lb: 'Users',             pg: 'adminUsers' },
-      { ic: '📊', lb: 'Analytics',         pg: 'adminAnalytics' },
-      { ic: '📝', lb: 'Feedback Reports',  pg: 'adminFeedback' },
-      { ic: '📊', lb: 'Attendance',        pg: 'orgAttend' },
+      { ic:'fa-solid fa-house',        lb:'Dashboard',         pg:'adminDash' },
+      { ic:'fa-solid fa-calendar-days',lb:'All Events',         pg:'adminEvents' },
+      { ic:'fa-solid fa-users',        lb:'Users',              pg:'adminUsers' },
+      { ic:'fa-solid fa-chart-line',   lb:'Analytics',          pg:'adminAnalytics' },
+      { ic:'fa-solid fa-comment-dots', lb:'Feedback Reports',   pg:'adminFeedback' },
+      { ic:'fa-solid fa-chart-bar',    lb:'Attendance',         pg:'orgAttend' },
     ],
   };
 
   const nav = document.getElementById('sbNav');
   nav.innerHTML = '';
-  const items = navMap[currentUser.role] || navMap.student;
-  items.forEach((n, i) => {
+  const items = navMap[currentUser.role]||navMap.student;
+  items.forEach((n,i) => {
     const d = document.createElement('div');
-    d.className = 'ni' + (i === 0 ? ' on' : '');
-    d.innerHTML = `<span class="ic">${n.ic}</span>${n.lb}`;
+    d.className = 'ni'+(i===0?' on':'');
+    d.innerHTML = `<i class="${n.ic} ic" aria-hidden="true"></i>${n.lb}`;
     d.onclick = () => {
-      nav.querySelectorAll('.ni').forEach(x => x.classList.remove('on'));
-      d.classList.add('on');
-      closeSB();
-      loadPage(n.pg);
+      nav.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+      d.classList.add('on'); closeSB(); loadPage(n.pg);
     };
     nav.appendChild(d);
   });
   loadPage(items[0].pg);
 }
 
-// ══════════════════ PAGE ROUTER ══════════════════
+// ══ PAGE ROUTER ══
 function loadPage(pg) {
-  closeScanner(); // stop camera if switching away
+  closeScanner();
   document.getElementById('mainContent').innerHTML = ldHtml();
-  const pages = { studentDash, browseEvents, myRegs, scanPage, aiRec, myFeedback, orgDash, myEvents, createPage, orgRegs, orgAttend, adminDash, adminEvents, adminUsers, adminAnalytics, adminFeedback };
+  const pages = { studentDash,browseEvents,myRegs,scanPage,aiRec,myFeedback,orgDash,myEvents,createPage,orgRegs,orgAttend,adminDash,adminEvents,adminUsers,adminAnalytics,adminFeedback };
   if (pages[pg]) pages[pg](document.getElementById('mainContent'));
 }
-const ldHtml  = (m='Loading…') => `<div class="loading"><div class="spin spind"></div><span class="t2">${m}</span></div>`;
-const errHtml = m => `<div class="empty"><div class="ei">⚠️</div><p style="color:var(--red);font-weight:700">Error</p><p class="tsm mt1">${m}</p></div>`;
-const CAT_COLORS = { Fest:'#2563eb',Workshop:'#16a34a',Seminar:'#7c3aed',Competition:'#ea580c',Cultural:'#db2777',Sports:'#0891b2' };
+const ldHtml = (m='Loading…') => `<div class="loading"><div class="spin spind"></div><span class="t3">${m}</span></div>`;
+const errHtml = m => `<div class="empty"><div class="ei">⚠️</div><p style="color:var(--rose);font-weight:600">Something went wrong</p><p class="esub">${m}</p></div>`;
+const CAT_COLORS = { Fest:'#4f46e5',Workshop:'#059669',Seminar:'#7c3aed',Competition:'#ea580c',Cultural:'#db2777',Sports:'#0891b2' };
+const CAT_ICONS  = { Fest:'fa-solid fa-star',Workshop:'fa-solid fa-hammer',Seminar:'fa-solid fa-chalkboard',Competition:'fa-solid fa-trophy',Cultural:'fa-solid fa-masks-theater',Sports:'fa-solid fa-basketball' };
 
-// ══════════════════ STUDENT PAGES ══════════════════
-
+// ══ STUDENT PAGES ══
 async function studentDash(mc) {
   try {
-    const [regs, events] = await Promise.all([api('/my/registrations'), api('/events')]);
-    const attended = regs.filter(r => r.attended).length;
+    const [regs, events] = await Promise.all([api('/my/registrations'),api('/events')]);
+    const attended = regs.filter(r=>r.attended).length;
     mc.innerHTML = `
-    <div class="ph"><h1>Welcome back, ${esc(currentUser.name || 'there')}! 👋</h1><p>Here's your activity overview</p></div>
-    <div class="stats">
-      <div class="sc blue"><div class="lb">Registered</div><div class="vl">${regs.length}</div><div class="sb2">Total events</div></div>
-      <div class="sc green"><div class="lb">Attended</div><div class="vl">${attended}</div><div class="sb2">Completed</div></div>
-      <div class="sc orange"><div class="lb">Upcoming</div><div class="vl">${regs.length - attended}</div><div class="sb2">Events ahead</div></div>
-      <div class="sc purple"><div class="lb">Available</div><div class="vl">${events.length}</div><div class="sb2">Browse all</div></div>
+    <div class="ph">
+      <h1>Welcome back, ${esc(currentUser.name||'there')}! 👋</h1>
+      <p>Here's your activity overview for today.</p>
     </div>
-    <div class="card"><div class="ch"><h3>📅 Your Registered Events</h3></div><div class="cb">
-      ${regs.length ? regs.map(r => `
-        <div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-          <div><div class="bold">${esc(r.title)}</div><div class="tsm t2">${r.date} • ${esc(r.venue)}</div></div>
-          <span class="badge ${r.attended ? 'bg' : 'bb'}">${r.attended ? '✅ Attended' : r.category}</span>
-        </div>`).join('') : '<div class="empty"><div class="ei">📭</div><p>No registrations yet. Browse events!</p></div>'}
-    </div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="stats">
+      <div class="sc blue"><div class="sc-icon"><i class="fa-solid fa-calendar-check"></i></div><div class="lb">Registered</div><div class="vl">${regs.length}</div><div class="sb2">Total events</div></div>
+      <div class="sc green"><div class="sc-icon"><i class="fa-solid fa-circle-check"></i></div><div class="lb">Attended</div><div class="vl">${attended}</div><div class="sb2">Completed</div></div>
+      <div class="sc orange"><div class="sc-icon"><i class="fa-solid fa-clock"></i></div><div class="lb">Upcoming</div><div class="vl">${regs.length-attended}</div><div class="sb2">Events ahead</div></div>
+      <div class="sc purple"><div class="sc-icon"><i class="fa-solid fa-compass"></i></div><div class="lb">Available</div><div class="vl">${events.length}</div><div class="sb2">Browse all</div></div>
+    </div>
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-ticket"></i> Your Registered Events</h3></div>
+      <div class="cb">
+        ${regs.length ? regs.map(r=>`
+          <div class="act-row">
+            <div>
+              <div class="bold">${esc(r.title)}</div>
+              <div class="tsm t3 mt1"><i class="fa-solid fa-calendar fa-xs"></i> ${r.date} &nbsp;•&nbsp; <i class="fa-solid fa-location-dot fa-xs"></i> ${esc(r.venue)}</div>
+            </div>
+            <span class="badge ${r.attended?'bg':'bb'}">${r.attended?'✓ Attended':r.category}</span>
+          </div>`).join('') : '<div class="empty"><div class="ei">📭</div><p>No registrations yet.</p><p class="esub">Browse events to get started!</p></div>'}
+      </div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function browseEvents(mc) {
   mc.innerHTML = `
-  <div class="ph"><h1>Browse Events 📅</h1><p>Discover and register for upcoming events</p></div>
+  <div class="ph"><h1>Browse Events</h1><p>Discover and register for upcoming campus events</p></div>
   <div class="fbar">
-    ${['All','Workshop','Seminar','Fest','Competition','Cultural','Sports'].map((c,i) =>
+    ${['All','Workshop','Seminar','Fest','Competition','Cultural','Sports'].map((c,i)=>
       `<div class="fchip ${i===0?'on':''}" onclick="filterEv(this,'${c}')">${c}</div>`).join('')}
   </div>
   <div id="evGrid">${ldHtml()}</div>`;
@@ -634,49 +767,56 @@ async function browseEvents(mc) {
 }
 
 function filterEv(el, cat) {
-  document.querySelectorAll('.fchip').forEach(c => c.classList.remove('on'));
-  el.classList.add('on'); currentFilter = cat; fetchEvents(cat);
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on'); currentFilter=cat; fetchEvents(cat);
 }
 
 async function fetchEvents(cat) {
   const g = document.getElementById('evGrid'); if (!g) return;
   g.innerHTML = ldHtml('Fetching events…');
   try {
-    const evs = await api('/events' + (cat !== 'All' ? `?category=${cat}` : ''));
+    const evs = await api('/events'+(cat!=='All'?`?category=${cat}`:''));
     g.className = evs.length ? 'eg' : '';
     g.innerHTML = evs.map(e => {
-      const fill = e.registered_count / e.capacity;
-      const fc = fill >= 1 ? 'full' : fill >= .8 ? 'warn' : '';
-      const isMine = e.my_status === 'registered';
-      const isWait = e.my_status === 'waitlisted';
-      const isFull = e.registered_count >= e.capacity && !isMine;
+      const fill = e.registered_count/e.capacity;
+      const fc = fill>=1?'full':fill>=.8?'warn':'';
+      const isMine = e.my_status==='registered', isWait = e.my_status==='waitlisted';
+      const isFull = e.registered_count>=e.capacity && !isMine;
       const today = new Date().toISOString().slice(0,10);
-      const isToday = e.date === today;
+      const isToday = e.date===today;
+      const catColor = CAT_COLORS[e.category]||'#6b7280';
       return `<div class="ec">
-        <div class="estrip" style="background:${CAT_COLORS[e.category]||'#94a3b8'}"></div>
+        <div class="estrip" style="background:${catColor}"></div>
         <div class="eb">
-          <div class="ecat" style="color:${CAT_COLORS[e.category]}">${e.category}</div>
-          ${isToday ? '<span class="badge bo" style="margin-bottom:5px">📍 Today</span>' : ''}
+          <div class="ecat-row">
+            <div class="ecat" style="color:${catColor}"><i class="${CAT_ICONS[e.category]||'fa-solid fa-calendar'} fa-xs"></i> ${e.category}</div>
+            ${isToday?'<span class="badge bo" style="font-size:10.5px">Today</span>':''}
+          </div>
           <div class="etitle">${esc(e.title)}</div>
           <div class="emeta">
-            <span>📅 ${e.date}</span><span>🕐 ${e.time||'—'}</span>
-            <span>📍 ${esc(e.venue)}</span><span>👥 ${e.registered_count}/${e.capacity}</span>
-            ${e.avg_rating ? `<span>⭐ ${e.avg_rating}/5</span>` : ''}
+            <span><i class="fa-solid fa-calendar"></i>${e.date}</span>
+            <span><i class="fa-solid fa-clock"></i>${e.time||'—'}</span>
+            <span><i class="fa-solid fa-location-dot"></i>${esc(e.venue)}</span>
+            <span><i class="fa-solid fa-users"></i>${e.registered_count}/${e.capacity} registered</span>
+            ${e.avg_rating?`<span><i class="fa-solid fa-star" style="color:#f59e0b"></i>${e.avg_rating}/5 rating</span>`:''}
           </div>
           <div class="capbar"><div class="capfill ${fc}" style="width:${Math.min(fill*100,100)}%"></div></div>
+          <div class="cap-label">${Math.round(fill*100)}% full</div>
         </div>
         <div class="ef">
           ${isMine
-            ? `<span class="badge bg">✅ Registered</span>
-               ${isToday ? `<button class="btn btn-g btn-sm" onclick="openScannerModal(${e.id},'${esc2(e.title)}')">📷 Scan QR</button>` : ''}
-               <button class="btn btn-d btn-sm" onclick="cancelReg(${e.id})">Cancel</button>`
-            : isWait ? `<span class="badge bo">⏳ Waitlisted</span>`
-            : isFull ? `<button class="btn btn-o btn-sm" onclick="joinWaitlist(${e.id})">Join Waitlist</button><span class="badge br">Full</span>`
-            : `<button class="btn btn-p btn-sm" onclick="openRegModal(${e.id},'${esc2(e.title)}','${e.date}','${e.time||''}','${esc2(e.venue)}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0">Register →</button>`}
+            ? `<span class="badge bg"><i class="fa-solid fa-check"></i> Registered</span>
+               <div class="flex gap2">
+                 ${isToday?`<button class="btn btn-g btn-xs" onclick="openScannerModal(${e.id},'${esc2(e.title)}')"><i class="fa-solid fa-camera"></i> Scan</button>`:''}
+                 <button class="btn btn-d btn-xs" onclick="cancelReg(${e.id})">Cancel</button>
+               </div>`
+            : isWait ? `<span class="badge bo"><i class="fa-solid fa-clock"></i> Waitlisted</span>`
+            : isFull ? `<div class="flex aic gap2"><button class="btn btn-o btn-xs" onclick="joinWaitlist(${e.id})">Join Waitlist</button><span class="badge br">Full</span></div>`
+            : `<button class="btn btn-p btn-xs" onclick="openRegModal(${e.id},'${esc2(e.title)}','${e.date}','${e.time||''}','${esc2(e.venue)}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0"><i class="fa-solid fa-plus"></i> Register</button>`}
         </div>
       </div>`;
-    }).join('') || `<div class="empty" style="grid-column:1/-1"><div class="ei">🔍</div><p>No events found</p></div>`;
-  } catch (e) { g.innerHTML = errHtml(e.message); }
+    }).join('')||`<div class="empty" style="grid-column:1/-1"><div class="ei">🔍</div><p>No events found for this category</p></div>`;
+  } catch(e) { g.innerHTML = errHtml(e.message); }
 }
 
 async function myRegs(mc) {
@@ -685,133 +825,155 @@ async function myRegs(mc) {
     const regs = await api('/my/registrations');
     const today = new Date().toISOString().slice(0,10);
     mc.innerHTML = `
-    <div class="ph"><h1>My Registrations 🎫</h1><p>Track your event registrations and attendance</p></div>
-    <div class="card"><div class="ch"><h3>All Registrations (${regs.length})</h3></div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Status</th><th>Attendance</th><th>Feedback</th></tr></thead>
-      <tbody>${regs.length ? regs.map(r => {
-        const isToday = r.date === today;
-        return `<tr>
-          <td><div class="bold">${esc(r.title)}</div><div class="tsm t2">${r.category}${isToday ? ' <span class="badge bo" style="font-size:9px">Today</span>' : ''}</div></td>
-          <td>${r.date}</td><td>${esc(r.venue)}</td>
-          <td>${r.attended ? '<span class="badge bg">✅ Attended</span>' : r.status==='waitlisted' ? '<span class="badge bo">⏳ Waitlisted</span>' : '<span class="badge bb">📅 Registered</span>'}</td>
-          <td>${r.attended ? '<span class="tsm t3">Done</span>' : (r.status==='registered' && isToday) ? `<button class="btn btn-g btn-sm" onclick="openScannerModal(${r.event_id},'${esc2(r.title)}')">📷 Scan QR</button>` : (r.status==='registered' && !isToday) ? `<span class="tsm t3">Available on ${r.date}</span>` : '—'}</td>
-          <td>${r.attended && !r.feedback_given ? `<button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${esc2(r.title)}')" style="width:auto;margin-top:0">Rate ⭐</button>` : r.attended && r.feedback_given ? '<span class="badge bg">Done ✓</span>' : '<span class="tsm t3">—</span>'}</td>
-        </tr>`;}).join('') : '<tr><td colspan="6"><div class="empty"><div class="ei">📭</div><p>No registrations yet</p></div></td></tr>'}
-      </tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>My Registrations</h1><p>Track your event registrations and attendance records.</p></div>
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-ticket"></i> All Registrations</h3><span class="badge bb">${regs.length} total</span></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Status</th><th>Attendance</th><th>Feedback</th></tr></thead>
+        <tbody>${regs.length ? regs.map(r=>{
+          const isToday=r.date===today;
+          return `<tr>
+            <td>
+              <div class="bold">${esc(r.title)}</div>
+              <div class="txs t3 mt1">${r.category}${isToday?' <span class="badge bo" style="font-size:9.5px">Today</span>':''}</div>
+            </td>
+            <td class="t2">${r.date}</td>
+            <td class="t2">${esc(r.venue)}</td>
+            <td>${r.attended?'<span class="badge bg">Attended</span>':r.status==='waitlisted'?'<span class="badge bo">Waitlisted</span>':'<span class="badge bb">Registered</span>'}</td>
+            <td>${r.attended?'<span class="t3 txs">Completed</span>':(r.status==='registered'&&isToday)?`<button class="btn btn-g btn-xs" onclick="openScannerModal(${r.event_id},'${esc2(r.title)}')"><i class="fa-solid fa-camera"></i> Scan QR</button>`:(r.status==='registered'&&!isToday)?`<span class="txs t3">Available ${r.date}</span>`:'—'}</td>
+            <td>${r.attended&&!r.feedback_given?`<button class="btn btn-p btn-xs" onclick="openFeedback(${r.event_id},'${esc2(r.title)}')" style="width:auto;margin-top:0"><i class="fa-solid fa-star"></i> Rate</button>`:r.attended&&r.feedback_given?'<span class="badge bg"><i class="fa-solid fa-check"></i> Done</span>':'<span class="t4 txs">—</span>'}</td>
+          </tr>`;}).join('') : '<tr><td colspan="6"><div class="empty"><div class="ei">📭</div><p>No registrations yet</p></div></td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
-// ── Student QR Scanner page ──
 async function scanPage(mc) {
   mc.innerHTML = ldHtml();
   try {
     const regs = await api('/my/registrations');
     const today = new Date().toISOString().slice(0,10);
-    const todayRegs = regs.filter(r => r.date === today && r.status === 'registered' && !r.attended);
-
+    const todayRegs = regs.filter(r=>r.date===today&&r.status==='registered'&&!r.attended);
     mc.innerHTML = `
-    <div class="ph"><h1>Scan QR Code 📷</h1><p>Mark your attendance by scanning the event QR code</p></div>
+    <div class="ph"><h1>Scan & Attend</h1><p>Mark your attendance by scanning the event QR code at the venue.</p></div>
     ${todayRegs.length ? `
-    <div class="card"><div class="ch"><h3>📅 Today's Events — Ready to Attend</h3></div><div class="cb">
-      ${todayRegs.map(r => `
-        <div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-          <div>
-            <div class="bold">${esc(r.title)}</div>
-            <div class="tsm t2">🕐 ${r.time||'—'} &nbsp;|&nbsp; 📍 ${esc(r.venue)}</div>
-          </div>
-          <button class="btn btn-g btn-sm" onclick="openScannerModal(${r.event_id},'${esc2(r.title)}')">📷 Scan QR</button>
-        </div>`).join('')}
-    </div></div>` : `
-    <div class="card"><div class="cb"><div class="empty"><div class="ei">📅</div>
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-calendar-day" style="color:var(--emerald)"></i> Today's Events</h3></div>
+      <div class="cb">
+        ${todayRegs.map(r=>`
+          <div class="act-row">
+            <div>
+              <div class="bold">${esc(r.title)}</div>
+              <div class="tsm t3 mt1"><i class="fa-solid fa-clock fa-xs"></i> ${r.time||'—'} &nbsp;•&nbsp; <i class="fa-solid fa-location-dot fa-xs"></i> ${esc(r.venue)}</div>
+            </div>
+            <button class="btn btn-g btn-sm" onclick="openScannerModal(${r.event_id},'${esc2(r.title)}')"><i class="fa-solid fa-camera"></i> Scan QR</button>
+          </div>`).join('')}
+      </div>
+    </div>` : `
+    <div class="card"><div class="cb"><div class="empty">
+      <div class="ei">📅</div>
       <p>No events to attend today</p>
-      <p class="tsm t3 mt1">Events you are registered for today will appear here</p>
+      <p class="esub">Events registered for today will appear here</p>
     </div></div></div>`}
-    <div class="card"><div class="ch"><h3>Already Attended Today</h3></div><div class="cb">
-      ${regs.filter(r=>r.date===today&&r.attended).map(r=>`
-        <div class="flex aic jb" style="padding:8px 0;border-bottom:1px solid var(--border)">
-          <div class="bold">${esc(r.title)}</div>
-          <span class="badge bg">✅ Attended</span>
-        </div>`).join('') || '<p class="t3 tsm">None yet today</p>'}
-    </div></div>`;
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-circle-check" style="color:var(--emerald)"></i> Already Attended Today</h3></div>
+      <div class="cb">
+        ${regs.filter(r=>r.date===today&&r.attended).map(r=>`
+          <div class="act-row">
+            <div class="bold">${esc(r.title)}</div>
+            <span class="badge bg"><i class="fa-solid fa-check"></i> Attended</span>
+          </div>`).join('')||'<p class="t4 txs">None yet today</p>'}
+      </div>
+    </div>`;
   } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function aiRec(mc) {
-  mc.innerHTML = ldHtml('Getting recommendations…');
+  mc.innerHTML = ldHtml('Getting your recommendations…');
   try {
     const d = await api('/recommendations');
-    const { recommendations: recs, top_categories, user_branch } = d;
-    const topCat = top_categories?.[0] || 'Workshop';
+    const { recommendations:recs, top_categories, user_branch } = d;
+    const topCat = top_categories?.[0]||'Workshop';
     mc.innerHTML = `
-    <div class="ph"><h1>AI Recommendations 🤖</h1><p>Personalised for your interests</p></div>
-    <div class="card mb2"><div class="cb"><div class="recpill">🧠 AI Insights</div>
-      <p class="t2 mt2">You prefer <b style="color:var(--purple)">${topCat}</b> events. Matches for <b>${esc(user_branch)}</b> branch:</p>
-    </div></div>
-    <div class="eg">${recs.length ? recs.map(e => `<div class="ec">
-        <div class="estrip" style="background:linear-gradient(90deg,#7c3aed,#2563eb)"></div>
-        <div class="eb"><div class="recpill">✨ ${esc(e.reason||'Recommended')}</div>
-          <div class="etitle mt1">${esc(e.title)}</div>
-          <div class="emeta"><span>📅 ${e.date}</span><span>📍 ${esc(e.venue)}</span><span>👥 ${e.registered_count}/${e.capacity}</span></div>
+    <div class="ph"><h1>AI Picks for You</h1><p>Personalised recommendations based on your interests and branch.</p></div>
+    <div class="info-banner mb2"><i class="fa-solid fa-robot"></i><div>You seem to love <strong>${topCat}</strong> events. Here are top picks for <strong>${esc(user_branch)}</strong> students.</div></div>
+    <div class="eg">${recs.length ? recs.map(e=>`<div class="ec">
+      <div class="estrip" style="background:linear-gradient(90deg,#7c3aed,#4f46e5)"></div>
+      <div class="eb">
+        <div class="mb2"><span class="recpill"><i class="fa-solid fa-wand-magic-sparkles"></i> ${esc(e.reason||'Recommended for you')}</span></div>
+        <div class="etitle">${esc(e.title)}</div>
+        <div class="emeta">
+          <span><i class="fa-solid fa-calendar"></i>${e.date}</span>
+          <span><i class="fa-solid fa-location-dot"></i>${esc(e.venue)}</span>
+          <span><i class="fa-solid fa-users"></i>${e.registered_count}/${e.capacity}</span>
         </div>
-        <div class="ef"><button class="btn btn-p btn-sm" onclick="openRegModal(${e.id},'${esc2(e.title)}','${e.date}','${e.time||''}','${esc2(e.venue)}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0">Register →</button></div>
-      </div>`).join('') : '<div class="empty" style="grid-column:1/-1"><div class="ei">🎉</div><p>All relevant events registered!</p></div>'}
+      </div>
+      <div class="ef"><button class="btn btn-p btn-xs" onclick="openRegModal(${e.id},'${esc2(e.title)}','${e.date}','${e.time||''}','${esc2(e.venue)}',${e.registered_count},${e.capacity})" style="width:auto;margin-top:0"><i class="fa-solid fa-plus"></i> Register</button></div>
+    </div>`).join(''):`<div class="empty" style="grid-column:1/-1"><div class="ei">🎉</div><p>You've registered for all relevant events!</p></div>`}
     </div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function myFeedback(mc) {
   mc.innerHTML = ldHtml();
   try {
     const regs = await api('/my/registrations');
-    const pending = regs.filter(r => r.attended && !r.feedback_given);
-    const done    = regs.filter(r => r.attended && r.feedback_given);
+    const pending = regs.filter(r=>r.attended&&!r.feedback_given);
+    const done    = regs.filter(r=>r.attended&&r.feedback_given);
     mc.innerHTML = `
-    <div class="ph"><h1>Give Feedback ⭐</h1><p>Help improve future events</p></div>
-    ${pending.length ? `<div class="card"><div class="ch"><h3>⏳ Pending (${pending.length})</h3></div><div class="cb">
-      ${pending.map(r => `<div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div><div class="bold">${esc(r.title)}</div><div class="tsm t2">${r.date}</div></div>
-        <button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${esc2(r.title)}')" style="width:auto;margin-top:0">Rate ⭐</button>
-      </div>`).join('')}
-    </div></div>` : ''}
-    <div class="card"><div class="ch"><h3>✅ Submitted (${done.length})</h3></div><div class="cb">
-      ${done.map(r => `<div class="flex aic jb" style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div class="bold">${esc(r.title)}</div><span class="badge bg">Submitted</span>
-      </div>`).join('') || '<div class="empty"><p>None yet</p></div>'}
-    </div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>Give Feedback</h1><p>Help improve future events with your honest reviews.</p></div>
+    ${pending.length ? `<div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-star" style="color:#f59e0b"></i> Awaiting Your Review</h3><span class="badge bo">${pending.length} pending</span></div>
+      <div class="cb">
+        ${pending.map(r=>`<div class="act-row">
+          <div><div class="bold">${esc(r.title)}</div><div class="txs t3 mt1">${r.date}</div></div>
+          <button class="btn btn-p btn-sm" onclick="openFeedback(${r.event_id},'${esc2(r.title)}')" style="width:auto;margin-top:0"><i class="fa-solid fa-star"></i> Rate Event</button>
+        </div>`).join('')}
+      </div>
+    </div>`:''}
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-circle-check" style="color:var(--emerald)"></i> Submitted Reviews</h3><span class="badge bg">${done.length} done</span></div>
+      <div class="cb">
+        ${done.map(r=>`<div class="act-row">
+          <div class="bold">${esc(r.title)}</div><span class="badge bg"><i class="fa-solid fa-check"></i> Submitted</span>
+        </div>`).join('')||'<div class="empty"><p>No reviews submitted yet</p></div>'}
+      </div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
-// ══════════════════ ORGANIZER PAGES ══════════════════
-
+// ══ ORGANIZER PAGES ══
 async function orgDash(mc) {
   mc.innerHTML = ldHtml();
   try {
     const evs = await api('/events');
-    const totalRegs = evs.reduce((a,e) => a + e.registered_count, 0);
-    const totalCap  = evs.reduce((a,e) => a + e.capacity, 0);
+    const totalRegs = evs.reduce((a,e)=>a+e.registered_count,0);
+    const totalCap  = evs.reduce((a,e)=>a+e.capacity,0);
     mc.innerHTML = `
-    <div class="ph"><h1>Organizer Dashboard 📋</h1><p>Welcome, ${esc(currentUser.name||'Organizer')}!</p></div>
+    <div class="ph"><h1>Organizer Dashboard</h1><p>Welcome back, ${esc(currentUser.name||'Organizer')}!</p></div>
     <div class="stats">
-      <div class="sc blue"><div class="lb">Events</div><div class="vl">${evs.length}</div></div>
-      <div class="sc green"><div class="lb">Registrations</div><div class="vl">${totalRegs}</div></div>
-      <div class="sc orange"><div class="lb">Capacity</div><div class="vl">${totalCap}</div></div>
-      <div class="sc purple"><div class="lb">Fill Rate</div><div class="vl">${totalCap ? Math.round(totalRegs/totalCap*100) : 0}%</div></div>
+      <div class="sc blue"><div class="sc-icon"><i class="fa-solid fa-calendar-days"></i></div><div class="lb">Events</div><div class="vl">${evs.length}</div></div>
+      <div class="sc green"><div class="sc-icon"><i class="fa-solid fa-users"></i></div><div class="lb">Registrations</div><div class="vl">${totalRegs}</div></div>
+      <div class="sc orange"><div class="sc-icon"><i class="fa-solid fa-door-open"></i></div><div class="lb">Capacity</div><div class="vl">${totalCap}</div></div>
+      <div class="sc purple"><div class="sc-icon"><i class="fa-solid fa-percent"></i></div><div class="lb">Fill Rate</div><div class="vl">${totalCap?Math.round(totalRegs/totalCap*100):0}%</div></div>
     </div>
-    <div class="card"><div class="ch"><h3>Events Overview</h3>
-      <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0">+ Create</button>
-    </div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Category</th><th>Registered</th><th>Waitlist</th><th>QR</th></tr></thead>
-      <tbody>${evs.map(e=>`<tr>
-        <td class="bold">${esc(e.title)}</td><td>${e.date}</td>
-        <td><span class="badge bb">${e.category}</span></td>
-        <td>${e.registered_count}/${e.capacity}</td><td>${e.waitlist_count}</td>
-        <td><button class="btn btn-o btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 QR</button></td>
-      </tr>`).join('')}</tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="card">
+      <div class="ch">
+        <h3><i class="fa-solid fa-calendar-days"></i> Events Overview</h3>
+        <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0"><i class="fa-solid fa-plus"></i> New Event</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Event</th><th>Date</th><th>Category</th><th>Registered</th><th>Waitlist</th><th>QR Code</th></tr></thead>
+        <tbody>${evs.map(e=>`<tr>
+          <td class="bold">${esc(e.title)}</td><td class="t2">${e.date}</td>
+          <td><span class="badge bb">${e.category}</span></td>
+          <td>${e.registered_count}/${e.capacity}</td><td class="t3">${e.waitlist_count}</td>
+          <td><button class="btn btn-o btn-xs" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')"><i class="fa-solid fa-qrcode"></i> View QR</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function myEvents(mc) {
@@ -819,43 +981,53 @@ async function myEvents(mc) {
   try {
     const evs = await api('/events');
     mc.innerHTML = `
-    <div class="ph"><h1>My Events 📅</h1></div>
-    <div class="card"><div class="ch"><h3>All Events (${evs.length})</h3>
-      <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0">+ New Event</button>
-    </div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Cap</th><th>Reg</th><th>Actions</th></tr></thead>
-      <tbody>${evs.map(e=>`<tr>
-        <td><div class="bold">${esc(e.title)}</div><span class="badge bb">${e.category}</span></td>
-        <td>${e.date}</td><td>${esc(e.venue)}</td><td>${e.capacity}</td>
-        <td>${e.registered_count} <span class="tsm t3">(${e.waitlist_count} wait)</span></td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-o btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 QR</button>
-          <button class="btn btn-o btn-sm" onclick="openEvModal(${e.id})">✏️ Edit</button>
-          <button class="btn btn-d btn-sm" onclick="deleteEvent(${e.id})">🗑</button>
-        </td>
-      </tr>`).join('')}</tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>My Events</h1><p>Manage the events you're organising.</p></div>
+    <div class="card">
+      <div class="ch">
+        <h3><i class="fa-solid fa-calendar-days"></i> All Events</h3>
+        <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0"><i class="fa-solid fa-plus"></i> New Event</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Cap</th><th>Reg / Wait</th><th>Actions</th></tr></thead>
+        <tbody>${evs.map(e=>`<tr>
+          <td>
+            <div class="bold">${esc(e.title)}</div>
+            <span class="badge bb" style="margin-top:3px;display:inline-flex">${e.category}</span>
+          </td>
+          <td class="t2">${e.date}</td><td class="t2">${esc(e.venue)}</td><td class="t2">${e.capacity}</td>
+          <td><span class="bold">${e.registered_count}</span> <span class="t4 txs">/ ${e.waitlist_count} wait</span></td>
+          <td><div class="flex gap2 fwrap">
+            <button class="btn btn-o btn-xs" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')"><i class="fa-solid fa-qrcode"></i></button>
+            <button class="btn btn-o btn-xs" onclick="openEvModal(${e.id})"><i class="fa-solid fa-pen"></i> Edit</button>
+            <button class="btn btn-d btn-xs" onclick="deleteEvent(${e.id})"><i class="fa-solid fa-trash"></i></button>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 function createPage(mc) {
   mc.innerHTML = `
-  <div class="ph"><h1>Create Event ➕</h1><p>Set up a new campus event</p></div>
-  <div class="card" style="max-width:580px"><div class="ch"><h3>Event Details</h3></div><div class="cb">
-    <div class="fg">
-      <div class="full"><label>Event Title *</label><input type="text" id="evTitle" placeholder="e.g. Tech Fest 2025"></div>
-      <div class="full"><label>Description</label><textarea id="evDesc" placeholder="About this event…"></textarea></div>
-      <div><label>Category</label><select id="evCat"><option>Workshop</option><option>Seminar</option><option>Fest</option><option>Competition</option><option>Cultural</option><option>Sports</option></select></div>
-      <div><label>Date *</label><input type="date" id="evDate"></div>
-      <div><label>Time</label><input type="text" id="evTime" placeholder="10:00 AM"></div>
-      <div><label>Venue *</label><input type="text" id="evVenue" placeholder="Seminar Hall A"></div>
-      <div><label>Capacity *</label><input type="number" id="evCap" placeholder="100" min="1"></div>
-      <div><label>Branch</label><input type="text" id="evBranch" placeholder="CSE or All"></div>
+  <div class="ph"><h1>Create Event</h1><p>Set up a new campus event for students to discover and register.</p></div>
+  <div class="card" style="max-width:580px">
+    <div class="ch"><h3><i class="fa-solid fa-plus-circle"></i> Event Details</h3></div>
+    <div class="cb">
+      <div class="fg">
+        <div class="full"><label>Event Title *</label><input type="text" id="evTitle" placeholder="e.g. Tech Fest 2025"></div>
+        <div class="full"><label>Description</label><textarea id="evDesc" placeholder="About this event…"></textarea></div>
+        <div><label>Category</label><select id="evCat"><option>Workshop</option><option>Seminar</option><option>Fest</option><option>Competition</option><option>Cultural</option><option>Sports</option></select></div>
+        <div><label>Date *</label><input type="date" id="evDate"></div>
+        <div><label>Time</label><input type="text" id="evTime" placeholder="10:00 AM"></div>
+        <div><label>Venue *</label><input type="text" id="evVenue" placeholder="Seminar Hall A"></div>
+        <div><label>Capacity *</label><input type="number" id="evCap" placeholder="100" min="1"></div>
+        <div><label>Branch</label><input type="text" id="evBranch" placeholder="CSE or All"></div>
+      </div>
+      <div class="errmsg" id="evErr"></div>
+      <button class="btn btn-p" id="evSaveBtn" onclick="saveEvent()" style="margin-top:20px"><i class="fa-solid fa-check"></i> Create Event</button>
     </div>
-    <div class="errmsg" id="evErr"></div>
-    <button class="btn btn-p" id="evSaveBtn" onclick="saveEvent()" style="margin-top:18px">Create Event ✓</button>
-  </div></div>`;
+  </div>`;
+ document.getElementById('evDate').min = new Date().toISOString().slice(0,10);
   editingEventId = null;
 }
 
@@ -864,84 +1036,106 @@ async function orgRegs(mc) {
   try {
     const regs = await api('/admin/registrations');
     mc.innerHTML = `
-    <div class="ph"><h1>Registrations 👥</h1></div>
-    <div class="card"><div class="ch"><h3>All (${regs.length})</h3></div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Student</th><th>Event</th><th>Branch</th><th>Year</th><th>Status</th><th>Attended</th></tr></thead>
-      <tbody>${regs.length ? regs.map(r=>`<tr>
-        <td><div class="bold">${esc(r.user_name)}</div><div class="tsm t2">${r.email}</div></td>
-        <td>${esc(r.event_title)}</td><td>${r.branch}</td><td>Year ${r.year}</td>
-        <td>${r.attended?'<span class="badge bg">Attended</span>':r.status==='waitlisted'?'<span class="badge bo">Waitlisted</span>':'<span class="badge bb">Registered</span>'}</td>
-        <td>${r.attended ? '✅' : '—'}</td>
-      </tr>`).join('') : '<tr><td colspan="6"><div class="empty"><p>No registrations</p></div></td></tr>'}
-      </tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>Registrations</h1><p>All student registrations across your events.</p></div>
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-users"></i> All Registrations</h3><span class="badge bb">${regs.length} total</span></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Student</th><th>Event</th><th>Branch</th><th>Year</th><th>Status</th><th>Attended</th></tr></thead>
+        <tbody>${regs.length ? regs.map(r=>`<tr>
+          <td>
+            <div class="flex aic gap2">
+              <div class="av-circle" style="width:28px;height:28px;font-size:11px;background:var(--indigo)">${r.user_name.charAt(0).toUpperCase()}</div>
+              <div><div class="bold">${esc(r.user_name)}</div><div class="txs t3">${r.email}</div></div>
+            </div>
+          </td>
+          <td class="t2">${esc(r.event_title)}</td><td class="t3">${r.branch}</td><td class="t3">Year ${r.year}</td>
+          <td>${r.attended?'<span class="badge bg">Attended</span>':r.status==='waitlisted'?'<span class="badge bo">Waitlisted</span>':'<span class="badge bb">Registered</span>'}</td>
+          <td>${r.attended?'<i class="fa-solid fa-check" style="color:var(--emerald)"></i>':'<i class="fa-solid fa-minus" style="color:var(--ink-4)"></i>'}</td>
+        </tr>`).join('') : '<tr><td colspan="6"><div class="empty"><p>No registrations yet</p></div></td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function orgAttend(mc) {
   mc.innerHTML = ldHtml();
   try {
-    const [evs, allRegs] = await Promise.all([api('/events'), api('/admin/registrations')]);
+    const [evs, allRegs] = await Promise.all([api('/events'),api('/admin/registrations')]);
     mc.innerHTML = `
-    <div class="ph"><h1>Attendance 📊</h1><p>Generate QR codes for today's events</p></div>
-    <div class="card"><div class="ch"><h3>Event Attendance & QR Codes</h3></div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Event</th><th>Date</th><th>Registered</th><th>Attended</th><th>Rate</th><th>QR Code</th></tr></thead>
-      <tbody>${evs.map(e=>{
-        const att  = allRegs.filter(r=>r.event_id===e.id&&r.attended).length;
-        const rate = e.registered_count ? Math.round(att/e.registered_count*100) : 0;
-        const today = new Date().toISOString().slice(0,10);
-        const isToday = e.date === today;
-        return`<tr>
-          <td><div class="bold">${esc(e.title)}</div>${isToday?'<span class="badge bo" style="font-size:9px">Today</span>':''}</td>
-          <td>${e.date}</td>
-          <td>${e.registered_count}</td><td>${att}</td>
-          <td><div class="flex aic gap2"><div style="width:55px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${rate}%;height:100%;background:var(--green);border-radius:3px"></div></div>${rate}%</div></td>
-          <td>${isToday
-            ? `<button class="btn btn-g btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 Show QR</button>`
-            : `<span class="tsm t3">Only on ${e.date}</span>`
-          }</td>
-        </tr>`;}).join('')}
-      </tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>Attendance</h1><p>Generate QR codes and track attendance for your events.</p></div>
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-chart-bar"></i> Event Attendance & QR Codes</h3></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Event</th><th>Date</th><th>Registered</th><th>Attended</th><th>Rate</th><th>QR Code</th></tr></thead>
+        <tbody>${evs.map(e=>{
+          const att  = allRegs.filter(r=>r.event_id===e.id&&r.attended).length;
+          const rate = e.registered_count?Math.round(att/e.registered_count*100):0;
+          const today = new Date().toISOString().slice(0,10);
+          const isToday = e.date===today;
+          return `<tr>
+            <td>
+              <div class="bold">${esc(e.title)}</div>
+              ${isToday?'<span class="badge bo" style="font-size:9.5px;margin-top:3px">Today</span>':''}
+            </td>
+            <td class="t2">${e.date}</td>
+            <td>${e.registered_count}</td><td class="bold">${att}</td>
+            <td>
+              <div class="flex aic gap2">
+                <div style="width:60px;height:5px;background:var(--line);border-radius:99px;overflow:hidden">
+                  <div style="width:${rate}%;height:100%;background:var(--emerald);border-radius:99px"></div>
+                </div>
+                <span class="txs bold" style="color:var(--emerald)">${rate}%</span>
+              </div>
+            </td>
+            <td>${isToday
+              ? `<button class="btn btn-g btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')"><i class="fa-solid fa-qrcode"></i> Show QR</button>`
+              : `<span class="txs t4">Available on ${e.date}</span>`}
+            </td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
-// ══════════════════ ADMIN PAGES ══════════════════
-
+// ══ ADMIN PAGES ══
 async function adminDash(mc) {
   mc.innerHTML = ldHtml();
   try {
     const s = await api('/admin/analytics');
     mc.innerHTML = `
-    <div class="ph"><h1>Admin Dashboard ⚙️</h1><p>Welcome, ${esc(currentUser.name||'Admin')}!</p></div>
+    <div class="ph"><h1>Admin Dashboard</h1><p>System-wide overview, ${esc(currentUser.name||'Admin')}.</p></div>
     <div class="stats">
-      <div class="sc blue"><div class="lb">Events</div><div class="vl">${s.totalEvents}</div></div>
-      <div class="sc green"><div class="lb">Students</div><div class="vl">${s.totalUsers}</div></div>
-      <div class="sc orange"><div class="lb">Registrations</div><div class="vl">${s.totalRegs}</div></div>
-      <div class="sc purple"><div class="lb">Attendance Rate</div><div class="vl">${s.totalRegs?Math.round(s.totalAttend/s.totalRegs*100):0}%</div></div>
+      <div class="sc blue"><div class="sc-icon"><i class="fa-solid fa-calendar-days"></i></div><div class="lb">Events</div><div class="vl">${s.totalEvents}</div></div>
+      <div class="sc green"><div class="sc-icon"><i class="fa-solid fa-user-graduate"></i></div><div class="lb">Students</div><div class="vl">${s.totalUsers}</div></div>
+      <div class="sc orange"><div class="sc-icon"><i class="fa-solid fa-ticket"></i></div><div class="lb">Registrations</div><div class="vl">${s.totalRegs}</div></div>
+      <div class="sc purple"><div class="sc-icon"><i class="fa-solid fa-chart-line"></i></div><div class="lb">Attendance Rate</div><div class="vl">${s.totalRegs?Math.round(s.totalAttend/s.totalRegs*100):0}%</div></div>
     </div>
-    <div class="card"><div class="ch"><h3>📊 Category Breakdown</h3></div><div class="cb">
-      ${s.byCategory.map(d=>{
-        const pct=Math.round(d.event_count/(s.totalEvents||1)*100);
-        return`<div style="margin-bottom:12px">
-          <div class="flex jb tsm mb1"><span>${d.category}</span><span>${d.event_count} events · ${d.reg_count||0} regs</span></div>
-          <div style="background:var(--border);border-radius:4px;height:7px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:var(--primary);border-radius:4px"></div>
-          </div></div>`;}).join('')}
-    </div></div>
-    ${s.topEvents.length?`<div class="card"><div class="ch"><h3>🏆 Top Events</h3></div><div class="cb">
-      ${s.topEvents.map((e,i)=>`<div class="flex aic jb" style="padding:9px 0;border-bottom:1px solid var(--border)">
-        <div class="flex aic gap2">
-          <div style="width:24px;height:24px;background:var(--pl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--primary)">${i+1}</div>
-          <span class="bold">${esc(e.title)}</span>
-        </div>
-        <span class="badge bb">${e.reg_count} registered</span>
-      </div>`).join('')}
-    </div></div>`:''}`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-chart-bar"></i> Category Breakdown</h3></div>
+      <div class="cb">
+        ${s.byCategory.map(d=>{
+          const pct=Math.round(d.event_count/(s.totalEvents||1)*100);
+          return `<div class="prog-row">
+            <div class="prog-head"><span class="bold t2">${d.category}</span><span class="txs t3">${d.event_count} events · ${d.reg_count||0} registrations</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          </div>`;}).join('')}
+      </div>
+    </div>
+    ${s.topEvents.length?`<div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-trophy" style="color:var(--amber)"></i> Top Events by Registration</h3></div>
+      <div class="cb">
+        ${s.topEvents.map((e,i)=>`<div class="act-row">
+          <div class="flex aic gap3">
+            <div style="width:26px;height:26px;background:${i===0?'var(--amber-lt)':i===1?'var(--line)':'var(--canvas)'};color:${i===0?'var(--amber)':i===1?'var(--ink-2)':'var(--ink-3)'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${i+1}</div>
+            <span class="bold">${esc(e.title)}</span>
+          </div>
+          <span class="badge bb">${e.reg_count} registered</span>
+        </div>`).join('')}
+      </div>
+    </div>`:''}`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function adminEvents(mc) {
@@ -949,48 +1143,61 @@ async function adminEvents(mc) {
   try {
     const evs = await api('/events');
     mc.innerHTML = `
-    <div class="ph"><h1>All Events 📅</h1></div>
-    <div class="card"><div class="ch"><h3>Events (${evs.length})</h3>
-      <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0">+ Add Event</button>
-    </div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Capacity</th><th>Fill</th><th>Actions</th></tr></thead>
-      <tbody>${evs.map(e=>`<tr>
-        <td class="bold">${esc(e.title)}</td>
-        <td><span class="badge bb">${e.category}</span></td>
-        <td>${e.date}</td><td>${e.capacity}</td>
-        <td>${e.registered_count}/${e.capacity}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-o btn-sm" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')">📱 QR</button>
-          <button class="btn btn-o btn-sm" onclick="openEvModal(${e.id})">✏️ Edit</button>
-          <button class="btn btn-d btn-sm" onclick="deleteEvent(${e.id})">Delete</button>
-        </td>
-      </tr>`).join('')}</tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>All Events</h1><p>Manage every event in the system.</p></div>
+    <div class="card">
+      <div class="ch">
+        <h3><i class="fa-solid fa-calendar-days"></i> Events</h3>
+        <button class="btn btn-p btn-sm" onclick="openEvModal()" style="width:auto;margin-top:0"><i class="fa-solid fa-plus"></i> Add Event</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Capacity</th><th>Fill</th><th>Actions</th></tr></thead>
+        <tbody>${evs.map(e=>`<tr>
+          <td class="bold">${esc(e.title)}</td>
+          <td><span class="badge bb">${e.category}</span></td>
+          <td class="t2">${e.date}</td><td class="t3">${e.capacity}</td>
+          <td><div class="flex aic gap2">
+            <div style="width:48px;height:4px;background:var(--line);border-radius:99px;overflow:hidden">
+              <div style="width:${Math.min(e.registered_count/e.capacity*100,100)}%;height:100%;background:var(--indigo);border-radius:99px"></div>
+            </div>
+            <span class="txs t3">${e.registered_count}/${e.capacity}</span>
+          </div></td>
+          <td><div class="flex gap2 fwrap">
+            <button class="btn btn-o btn-xs" onclick="openQRDisplay(${e.id},'${esc2(e.title)}','${e.date}','${esc2(e.venue)}')"><i class="fa-solid fa-qrcode"></i></button>
+            <button class="btn btn-o btn-xs" onclick="openEvModal(${e.id})"><i class="fa-solid fa-pen"></i> Edit</button>
+            <button class="btn btn-d btn-xs" onclick="deleteEvent(${e.id})"><i class="fa-solid fa-trash"></i> Delete</button>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function adminUsers(mc) {
   mc.innerHTML = ldHtml();
   try {
     const users = await api('/admin/users');
-    const col = { student:'#2563eb', organizer:'#16a34a', admin:'#7c3aed' };
+    const roleCol = { student:'#4f46e5', organizer:'#059669', admin:'#7c3aed' };
     mc.innerHTML = `
-    <div class="ph"><h1>Users 👤</h1></div>
-    <div class="card"><div class="ch"><h3>All Users (${users.length})</h3></div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Year</th></tr></thead>
-      <tbody>${users.map(u=>`<tr>
-        <td><div class="flex aic gap2">
-          <div style="width:30px;height:30px;background:${col[u.role]||'#94a3b8'};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">${u.name.charAt(0).toUpperCase()}</div>
-          <span class="bold">${esc(u.name)}</span>
-        </div></td>
-        <td>${u.email}</td>
-        <td><span class="badge ${u.role==='admin'?'bp':u.role==='organizer'?'bg':'bb'}">${u.role}</span></td>
-        <td>${u.branch}</td><td>${u.year?'Year '+u.year:'—'}</td>
-      </tr>`).join('')}</tbody>
-    </table></div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="ph"><h1>Users</h1><p>All registered users in the system.</p></div>
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-users"></i> All Users</h3><span class="badge bb">${users.length} total</span></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Year</th></tr></thead>
+        <tbody>${users.map(u=>`<tr>
+          <td>
+            <div class="flex aic gap2">
+              <div class="av-circle" style="width:30px;height:30px;font-size:12px;background:${roleCol[u.role]||'#6b7280'}">${u.name.charAt(0).toUpperCase()}</div>
+              <span class="bold">${esc(u.name)}</span>
+            </div>
+          </td>
+          <td class="t3 tsm">${u.email}</td>
+          <td><span class="badge ${u.role==='admin'?'bp':u.role==='organizer'?'bg':'bb'}">${u.role}</span></td>
+          <td class="t2">${u.branch}</td>
+          <td class="t3">${u.year?'Year '+u.year:'—'}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function adminAnalytics(mc) {
@@ -998,420 +1205,333 @@ async function adminAnalytics(mc) {
   try {
     const s = await api('/admin/analytics');
     mc.innerHTML = `
-    <div class="ph"><h1>Analytics 📊</h1></div>
+    <div class="ph"><h1>Analytics</h1><p>Detailed statistics and performance metrics.</p></div>
     <div class="stats">
-      <div class="sc blue"><div class="lb">Events</div><div class="vl">${s.totalEvents}</div></div>
-      <div class="sc green"><div class="lb">Registrations</div><div class="vl">${s.totalRegs}</div></div>
-      <div class="sc orange"><div class="lb">Feedback</div><div class="vl">${s.totalFeedback}</div></div>
-      <div class="sc purple"><div class="lb">Avg Rating</div><div class="vl">${s.avgRating||'—'}</div></div>
+      <div class="sc blue"><div class="sc-icon"><i class="fa-solid fa-calendar-days"></i></div><div class="lb">Events</div><div class="vl">${s.totalEvents}</div></div>
+      <div class="sc green"><div class="sc-icon"><i class="fa-solid fa-ticket"></i></div><div class="lb">Registrations</div><div class="vl">${s.totalRegs}</div></div>
+      <div class="sc orange"><div class="sc-icon"><i class="fa-solid fa-comment-dots"></i></div><div class="lb">Feedback</div><div class="vl">${s.totalFeedback}</div></div>
+      <div class="sc purple"><div class="sc-icon"><i class="fa-solid fa-star" style="color:var(--violet)"></i></div><div class="lb">Avg Rating</div><div class="vl">${s.avgRating||'—'}</div></div>
     </div>
-    <div class="card"><div class="ch"><h3>Registrations by Category</h3></div><div class="cb">
-      ${s.byCategory.map(d=>{
-        const maxR=Math.max(...s.byCategory.map(x=>x.reg_count||0),1);
-        return`<div style="margin-bottom:13px">
-          <div class="flex jb mb1"><span class="bold">${d.category}</span><span class="tsm t2">${d.reg_count||0} regs</span></div>
-          <div style="background:var(--border);border-radius:5px;height:9px;overflow:hidden">
-            <div style="width:${Math.round((d.reg_count||0)/maxR*100)}%;height:100%;background:linear-gradient(90deg,var(--primary),#0ea5e9);border-radius:5px"></div>
-          </div></div>`;}).join('')}
-    </div></div>`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+    <div class="card">
+      <div class="ch"><h3><i class="fa-solid fa-chart-bar"></i> Registrations by Category</h3></div>
+      <div class="cb">
+        ${s.byCategory.map(d=>{
+          const maxR=Math.max(...s.byCategory.map(x=>x.reg_count||0),1);
+          return `<div class="prog-row">
+            <div class="prog-head"><span class="bold t2">${d.category}</span><span class="txs bold t3">${d.reg_count||0} registrations</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:${Math.round((d.reg_count||0)/maxR*100)}%"></div></div>
+          </div>`;}).join('')}
+      </div>
+    </div>`;
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
 async function adminFeedback(mc) {
   mc.innerHTML = ldHtml();
   try {
-    const [fbs, evs] = await Promise.all([api('/admin/feedback'), api('/events')]);
+    const [fbs, evs] = await Promise.all([api('/admin/feedback'),api('/events')]);
     const byEv = {};
-    fbs.forEach(f => { if(!byEv[f.event_id]) byEv[f.event_id]=[]; byEv[f.event_id].push(f); });
+    fbs.forEach(f=>{ if(!byEv[f.event_id]) byEv[f.event_id]=[]; byEv[f.event_id].push(f); });
     mc.innerHTML = `
-    <div class="ph"><h1>Feedback Reports 📝</h1></div>
+    <div class="ph"><h1>Feedback Reports</h1><p>Student reviews across all events.</p></div>
     ${evs.map(e=>{
       const ef=byEv[e.id]||[], avg=e.avg_rating;
-      return`<div class="card">
-        <div class="ch"><h3>${esc(e.title)}</h3>
-          ${avg?`<div class="flex aic gap2"><span style="font-size:18px;font-weight:700;color:#f59e0b">${avg}</span><span style="color:#f59e0b">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</span><span class="tsm t2">(${ef.length})</span></div>`:'<span class="tsm t3">No reviews</span>'}
+      return `<div class="card">
+        <div class="ch">
+          <h3>${esc(e.title)}</h3>
+          ${avg?`<div class="flex aic gap2">
+            <span style="font-size:19px;font-weight:700;color:#f59e0b;font-family:'Sora',sans-serif">${avg}</span>
+            <span style="color:#f59e0b;letter-spacing:1px">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</span>
+            <span class="txs t3">(${ef.length} reviews)</span>
+          </div>`:'<span class="txs t4">No reviews yet</span>'}
         </div>
         ${ef.length?`<div class="cb">${ef.map(f=>`
-          <div style="padding:10px;background:var(--surface);border-radius:8px;margin-bottom:8px">
-            <div class="flex jb mb1"><span class="bold tsm">${esc(f.user_name)}</span><span style="color:#f59e0b">${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}</span></div>
-            ${f.comment?`<div class="tsm t2">"${esc(f.comment)}"</div>`:''}
+          <div style="padding:11px 13px;background:var(--canvas);border-radius:var(--r-sm);margin-bottom:8px;border:1px solid var(--line-2)">
+            <div class="flex jb mb1">
+              <div class="flex aic gap2">
+                <div class="av-circle" style="width:22px;height:22px;font-size:10px;background:var(--indigo)">${f.user_name.charAt(0).toUpperCase()}</div>
+                <span class="bold txs">${esc(f.user_name)}</span>
+              </div>
+              <span style="color:#f59e0b;letter-spacing:.5px">${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}</span>
+            </div>
+            ${f.comment?`<div class="tsm t2" style="padding-left:30px">"${esc(f.comment)}"</div>`:''}
           </div>`).join('')}</div>`:''}
       </div>`;}).join('')}`;
-  } catch (e) { mc.innerHTML = errHtml(e.message); }
+  } catch(e) { mc.innerHTML = errHtml(e.message); }
 }
 
-// ══════════════════ QR DISPLAY (Organizer/Admin) ══════════════════
-
+// ══ QR DISPLAY ══
 async function openQRDisplay(eid, title, date, venue) {
   document.getElementById('qrDispName').textContent = title;
-  document.getElementById('qrDispDate').textContent = date + ' • ' + venue;
+  document.getElementById('qrDispDate').textContent = date+' • '+venue;
   document.getElementById('qrDispToken').textContent = 'Fetching QR token…';
-
   const today = new Date().toISOString().slice(0,10);
   const badge = document.getElementById('qrValidityBadge');
-  if (date === today) {
-    badge.textContent = '✅ Valid for Today'; badge.style.background='var(--gl)'; badge.style.color='var(--green)'; badge.style.borderColor='#bbf7d0';
+  if (date===today) {
+    badge.className='qr-validity'; badge.style.cssText='background:var(--emerald-lt);color:var(--emerald);border:1px solid rgba(5,150,105,.2)';
+    badge.textContent='✓ Valid for Today';
   } else {
-    badge.textContent = `⚠️ Event is on ${date} — QR only works that day`; badge.style.background='var(--ol)'; badge.style.color='var(--orange)'; badge.style.borderColor='#fed7aa';
+    badge.className='qr-validity'; badge.style.cssText='background:var(--amber-lt);color:var(--amber);border:1px solid rgba(217,119,6,.2)';
+    badge.textContent='Event on '+date+' — QR only works that day';
   }
-
   openModal('qrDisplayModal');
-
   try {
     const d = await api(`/events/${eid}/qr-token`);
     const tokenStr = d.token;
     document.getElementById('qrDispToken').textContent = tokenStr;
-    drawQR(tokenStr, eid);
-  } catch (e) {
-    document.getElementById('qrDispToken').textContent = 'Error: ' + e.message;
-  }
+    drawQR(tokenStr);
+  } catch(e) { document.getElementById('qrDispToken').textContent='Error: '+e.message; }
 }
 
-function closeQRDisplay() {
-  closeModal('qrDisplayModal');
-}
+function closeQRDisplay() { closeModal('qrDisplayModal'); }
 
-// Draw a simple deterministic QR-like visual on canvas using the token
-function drawQR(tokenStr, eventId) {
-  const canvas = document.getElementById('qrCanvas');
-  if (!canvas) return;
+function drawQR(tokenStr) {
+  const canvas = document.getElementById('qrCanvas'); if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const size = 180;
-  const cells = 21;
-  const cell = Math.floor(size / cells);
+  const size=180, cells=21, cell=Math.floor(size/cells);
   ctx.clearRect(0,0,size,size);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0,0,size,size);
-
-  // Encode token as bits
-  let bits = [];
-  for (let i = 0; i < tokenStr.length; i++) {
-    const c = tokenStr.charCodeAt(i);
-    for (let b = 7; b >= 0; b--) bits.push((c >> b) & 1);
-  }
-
-  ctx.fillStyle = '#1e293b';
-  for (let r = 0; r < cells; r++) {
-    for (let c = 0; c < cells; c++) {
-      // Corner finders
-      const inTopLeft     = r < 7 && c < 7;
-      const inTopRight    = r < 7 && c >= cells-7;
-      const inBottomLeft  = r >= cells-7 && c < 7;
-      if (inTopLeft || inTopRight || inBottomLeft) {
-        const lr = inTopLeft?r:(inTopRight?r:r-(cells-7));
-        const lc = inTopLeft?c:(inTopRight?c-(cells-7):c);
-        // Outer border
-        if (lr===0||lr===6||lc===0||lc===6) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
-        // Inner square
-        if (lr>=2&&lr<=4&&lc>=2&&lc<=4) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
-        continue;
-      }
-      // Data area: use token bits
-      const idx = (r * cells + c) % bits.length;
-      if (bits[idx]) ctx.fillRect(c*cell, r*cell, cell-1, cell-1);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size);
+  let bits=[];
+  for (let i=0;i<tokenStr.length;i++) { const c=tokenStr.charCodeAt(i); for(let b=7;b>=0;b--) bits.push((c>>b)&1); }
+  ctx.fillStyle='#1e293b';
+  for (let r=0;r<cells;r++) for (let c=0;c<cells;c++) {
+    const iTL=r<7&&c<7, iTR=r<7&&c>=cells-7, iBL=r>=cells-7&&c<7;
+    if (iTL||iTR||iBL) {
+      const lr=iTL?r:iTR?r:r-(cells-7), lc=iTL?c:iTR?c-(cells-7):c;
+      if (lr===0||lr===6||lc===0||lc===6) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
+      if (lr>=2&&lr<=4&&lc>=2&&lc<=4) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
+      continue;
     }
+    if (bits[(r*cells+c)%bits.length]) ctx.fillRect(c*cell,r*cell,cell-1,cell-1);
   }
-  // Timing strips
-  for (let i = 8; i < cells-8; i++) {
-    if (i%2===0) { ctx.fillRect(i*cell,6*cell,cell,cell); ctx.fillRect(6*cell,i*cell,cell,cell); }
-  }
+  for (let i=8;i<cells-8;i++) if(i%2===0) { ctx.fillRect(i*cell,6*cell,cell,cell); ctx.fillRect(6*cell,i*cell,cell,cell); }
 }
 
-// ══════════════════ QR SCANNER (Student) ══════════════════
-
+// ══ QR SCANNER ══
 function openScannerModal(eid, title) {
-  scanEventId = eid;
-  document.getElementById('scanEventName').textContent = title;
-  document.getElementById('scanStatus').textContent = 'Align the QR code within the frame';
-  document.getElementById('manualToken').value = '';
+  scanEventId=eid;
+  document.getElementById('scanEventName').textContent=title;
+  document.getElementById('scanStatus').textContent='Align the QR code within the frame';
+  document.getElementById('manualToken').value='';
   openModal('qrScanModal');
   startCamera();
 }
 
 async function startCamera() {
   stopCamera();
-  const video = document.getElementById('scanVideo');
+  const video=document.getElementById('scanVideo');
   try {
-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    video.srcObject = scanStream;
-    await video.play();
-
-    // Off-screen canvas for frame capture
-    scanCanvas = document.createElement('canvas');
-    scanCtx = scanCanvas.getContext('2d');
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    video.srcObject=scanStream; await video.play();
+    scanCanvas=document.createElement('canvas'); scanCtx=scanCanvas.getContext('2d');
     scanLoop();
-  } catch (e) {
-    document.getElementById('scanStatus').textContent = 'Camera unavailable — use manual token below';
-  }
+  } catch(e) { document.getElementById('scanStatus').textContent='Camera unavailable — use manual token below'; }
 }
 
 function scanLoop() {
-  const video = document.getElementById('scanVideo');
-  if (!video || !scanStream || !scanCtx) return;
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    scanCanvas.width  = video.videoWidth;
-    scanCanvas.height = video.videoHeight;
-    scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
-    const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-    const code = typeof jsQR !== 'undefined' ? jsQR(imageData.data, imageData.width, imageData.height) : null;
-    if (code && code.data) {
-      stopCamera();
-      handleScannedToken(code.data);
-      return;
-    }
+  const video=document.getElementById('scanVideo');
+  if (!video||!scanStream||!scanCtx) return;
+  if (video.readyState===video.HAVE_ENOUGH_DATA) {
+    scanCanvas.width=video.videoWidth; scanCanvas.height=video.videoHeight;
+    scanCtx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);
+    const id=scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
+    const code=typeof jsQR!=='undefined'?jsQR(id.data,id.width,id.height):null;
+    if (code&&code.data) { stopCamera(); handleScannedToken(code.data); return; }
   }
-  scanAnimFrame = requestAnimationFrame(scanLoop);
+  scanAnimFrame=requestAnimationFrame(scanLoop);
 }
 
 function stopCamera() {
-  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
-  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  if (scanAnimFrame){cancelAnimationFrame(scanAnimFrame);scanAnimFrame=null;}
+  if (scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
 }
 
-function closeScanner() {
-  stopCamera();
-  closeModal('qrScanModal');
-  scanEventId = null;
-}
+function closeScanner() { stopCamera(); closeModal('qrScanModal'); scanEventId=null; }
 
 async function handleScannedToken(tokenStr) {
-  const statusEl = document.getElementById('scanStatus');
-  if (statusEl) statusEl.textContent = '⏳ Verifying…';
+  const el=document.getElementById('scanStatus');
+  if (el) el.textContent='Verifying…';
   try {
-    const d = await api(`/events/${scanEventId}/attend`, { method: 'POST', body: JSON.stringify({ qr_token: tokenStr }) });
-    closeScanner();
-    showNotif('✅ ' + d.message);
-    loadPage(currentUser.role === 'student' ? 'scanPage' : 'myRegs');
-  } catch (e) {
-    if (statusEl) statusEl.textContent = '❌ ' + e.message;
-    showNotif(e.message, 'err');
-    // Restart camera to try again
-    setTimeout(() => {
-      if (document.getElementById('qrScanModal')?.classList.contains('open')) startCamera();
-    }, 2500);
+    const d=await api(`/events/${scanEventId}/attend`,{method:'POST',body:JSON.stringify({qr_token:tokenStr})});
+    closeScanner(); showNotif('✅ '+d.message);
+    loadPage(currentUser.role==='student'?'scanPage':'myRegs');
+  } catch(e) {
+    if (el) el.textContent='❌ '+e.message;
+    showNotif(e.message,'err');
+    setTimeout(()=>{ if(document.getElementById('qrScanModal')?.classList.contains('open')) startCamera(); },2500);
   }
 }
 
 function submitManualToken() {
-  const token = document.getElementById('manualToken').value.trim();
-  if (!token) { showNotif('Please enter a QR token', 'err'); return; }
-  stopCamera();
-  handleScannedToken(token);
+  const t=document.getElementById('manualToken').value.trim();
+  if (!t){showNotif('Please enter a QR token','err');return;}
+  stopCamera(); handleScannedToken(t);
 }
 
-// ══════════════════ REGISTRATION ACTIONS ══════════════════
-
-function openRegModal(eid, title, date, time, venue, reg, cap) {
-  document.getElementById('regMTitle').textContent = 'Register: ' + title;
-  document.getElementById('regMBody').innerHTML = `
-    <div style="margin-bottom:14px">
-      <div class="bold" style="font-size:15px;margin-bottom:7px">${esc(title)}</div>
-      <div class="tsm t2 mb1">📅 ${date} &nbsp;|&nbsp; 🕐 ${time||'—'}</div>
-      <div class="tsm t2 mb1">📍 ${esc(venue)}</div>
-      <div class="tsm t2">👥 ${reg}/${cap} registered</div>
+// ══ REGISTRATION ══
+function openRegModal(eid,title,date,time,venue,reg,cap) {
+  document.getElementById('regMTitle').textContent='Register: '+title;
+  document.getElementById('regMBody').innerHTML=`
+    <div class="mb2">
+      <div class="bold" style="font-size:16px;font-family:'Sora',sans-serif;margin-bottom:10px">${esc(title)}</div>
+      <div class="flex gap3 fwrap tsm t2 mb1">
+        <span><i class="fa-solid fa-calendar fa-xs"></i> ${date}</span>
+        <span><i class="fa-solid fa-clock fa-xs"></i> ${time||'—'}</span>
+      </div>
+      <div class="tsm t2 mb1"><i class="fa-solid fa-location-dot fa-xs"></i> ${esc(venue)}</div>
+      <div class="tsm t2"><i class="fa-solid fa-users fa-xs"></i> ${reg}/${cap} registered</div>
     </div>
-    <div style="background:var(--pl);border:1px solid #bfdbfe;border-radius:8px;padding:11px;font-size:13px;color:var(--primary)">
-      ✉️ Confirmation will be sent to <b>${esc(currentUser.email || '')}</b>
-    </div>`;
-  const btn = document.getElementById('regMBtn');
-  btn.disabled = false; btn.textContent = 'Confirm Registration';
-  btn.onclick = () => confirmReg(eid);
+    <div class="info-banner"><i class="fa-solid fa-envelope-circle-check"></i><div>Confirmation will be sent to <strong>${esc(currentUser.email||'')}</strong></div></div>`;
+  const btn=document.getElementById('regMBtn');
+  btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm Registration';
+  btn.onclick=()=>confirmReg(eid);
   openModal('regModal');
 }
 
 async function confirmReg(eid) {
-  const btn = document.getElementById('regMBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Registering…';
+  const btn=document.getElementById('regMBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Registering…';
   try {
-    const d = await api(`/events/${eid}/register`, { method: 'POST' });
-    closeModal('regModal'); showNotif('✅ ' + d.message);
+    const d=await api(`/events/${eid}/register`,{method:'POST'});
+    closeModal('regModal'); showNotif('✅ '+d.message);
     fetchEvents(currentFilter);
-  } catch (e) {
-    showNotif(e.message, 'err');
-    btn.disabled = false; btn.textContent = 'Confirm Registration';
-  }
+  } catch(e) { showNotif(e.message,'err'); btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm Registration'; }
 }
 
 async function cancelReg(eid) {
-  if (!confirm('Cancel your registration?')) return;
-  try {
-    const d = await api(`/events/${eid}/register`, { method: 'DELETE' });
-    showNotif(d.message, 'inf'); fetchEvents(currentFilter);
-  } catch (e) { showNotif(e.message, 'err'); }
+  if(!confirm('Cancel your registration?')) return;
+  try { const d=await api(`/events/${eid}/register`,{method:'DELETE'}); showNotif(d.message,'inf'); fetchEvents(currentFilter); }
+  catch(e) { showNotif(e.message,'err'); }
 }
 
 async function joinWaitlist(eid) {
-  try {
-    const d = await api(`/events/${eid}/register`, { method: 'POST' });
-    showNotif(d.message, 'inf'); fetchEvents(currentFilter);
-  } catch (e) { showNotif(e.message, 'err'); }
+  try { const d=await api(`/events/${eid}/register`,{method:'POST'}); showNotif(d.message,'inf'); fetchEvents(currentFilter); }
+  catch(e) { showNotif(e.message,'err'); }
 }
 
-// ══════════════════ CREATE / EDIT / DELETE EVENT ══════════════════
-
-async function openEvModal(eid = null) {
-  editingEventId = eid;
-  document.getElementById('evModalTitle').textContent = eid ? 'Edit Event' : 'Create New Event';
-  document.getElementById('evSaveBtn').textContent = eid ? 'Save Changes' : 'Create Event';
+// ══ CREATE / EDIT / DELETE EVENT ══
+async function openEvModal(eid=null) {
+  editingEventId=eid;
+  document.getElementById('evDate').min = new Date().toISOString().slice(0,10);
+  document.getElementById('evModalTitle').textContent=eid?'Edit Event':'Create New Event';
+  document.getElementById('evSaveBtn').textContent=eid?'Save Changes':'Create Event';
   document.getElementById('evErr').classList.remove('show');
-  ['evTitle','evDesc','evTime','evVenue','evBranch'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('evDate').value = '';
-  document.getElementById('evCap').value = '';
-  document.getElementById('evCat').value = 'Workshop';
+  ['evTitle','evDesc','evTime','evVenue','evBranch'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('evDate').value=''; document.getElementById('evCap').value=''; document.getElementById('evCat').value='Workshop';
   if (eid) {
     try {
-      const e = await api(`/events/${eid}`);
-      document.getElementById('evTitle').value  = e.title || '';
-      document.getElementById('evDesc').value   = e.description || '';
-      document.getElementById('evCat').value    = e.category || 'Workshop';
-      document.getElementById('evDate').value   = e.date || '';
-      document.getElementById('evTime').value   = e.time || '';
-      document.getElementById('evVenue').value  = e.venue || '';
-      document.getElementById('evCap').value    = e.capacity || '';
-      document.getElementById('evBranch').value = e.branch || '';
-    } catch (err) { showNotif('Could not load event: ' + err.message, 'err'); return; }
+      const e=await api(`/events/${eid}`);
+      document.getElementById('evTitle').value=e.title||'';
+      document.getElementById('evDesc').value=e.description||'';
+      document.getElementById('evCat').value=e.category||'Workshop';
+      document.getElementById('evDate').value=e.date||'';
+      document.getElementById('evTime').value=e.time||'';
+      document.getElementById('evVenue').value=e.venue||'';
+      document.getElementById('evCap').value=e.capacity||'';
+      document.getElementById('evBranch').value=e.branch||'';
+    } catch(err){showNotif('Could not load event: '+err.message,'err');return;}
   }
   openModal('evModal');
 }
 
 async function saveEvent() {
-  const title  = document.getElementById('evTitle')?.value.trim();
-  const desc   = document.getElementById('evDesc')?.value.trim();
-  const cat    = document.getElementById('evCat')?.value;
-  const date   = document.getElementById('evDate')?.value;
-  const time   = document.getElementById('evTime')?.value.trim();
-  const venue  = document.getElementById('evVenue')?.value.trim();
-  const cap    = parseInt(document.getElementById('evCap')?.value) || 0;
-  const branch = document.getElementById('evBranch')?.value.trim() || 'All';
-  const errEl  = document.getElementById('evErr');
+  const title=document.getElementById('evTitle')?.value.trim();
+  const desc=document.getElementById('evDesc')?.value.trim();
+  const cat=document.getElementById('evCat')?.value;
+  const date=document.getElementById('evDate')?.value;
+  const time=document.getElementById('evTime')?.value.trim();
+  const venue=document.getElementById('evVenue')?.value.trim();
+  const cap=parseInt(document.getElementById('evCap')?.value)||0;
+  const branch=document.getElementById('evBranch')?.value.trim()||'All';
+  const errEl=document.getElementById('evErr');
   errEl.classList.remove('show');
-  if (!title) { errEl.textContent='Event title is required'; errEl.classList.add('show'); return; }
-  if (!date)  { errEl.textContent='Date is required'; errEl.classList.add('show'); return; }
-  if (!venue) { errEl.textContent='Venue is required'; errEl.classList.add('show'); return; }
-  if (!cap || cap < 1) { errEl.textContent='Capacity must be at least 1'; errEl.classList.add('show'); return; }
-
-  const btn = document.getElementById('evSaveBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
-  const body = JSON.stringify({ title, description: desc, category: cat, date, time, venue, capacity: cap, branch });
-
+  if (!title){errEl.textContent='Event title is required';errEl.classList.add('show');return;}
+  if (!date){errEl.textContent='Date is required';errEl.classList.add('show');return;}
+  if (!venue){errEl.textContent='Venue is required';errEl.classList.add('show');return;}
+  if (!cap||cap<1){errEl.textContent='Capacity must be at least 1';errEl.classList.add('show');return;}
+  const btn=document.getElementById('evSaveBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Saving…';
+  const body=JSON.stringify({title,description:desc,category:cat,date,time,venue,capacity:cap,branch});
   try {
     if (editingEventId) {
-      await api(`/events/${editingEventId}`, { method: 'PUT', body });
-      showNotif('✅ Event updated successfully!');
-    } else {
-      await api('/events', { method: 'POST', body });
-      showNotif('✅ Event created successfully!');
+      const upd = await api(`/events/${editingEventId}`,{method:'PUT',body});
+      const promoMsg = (upd.promoted_count > 0) ? ` ${upd.promoted_count} waitlisted student(s) promoted to registered.` : '';
+      showNotif('✅ Event updated!' + promoMsg);
     }
+    else { await api('/events',{method:'POST',body}); showNotif('✅ Event created!'); }
     closeModal('evModal');
-    loadPage(currentUser.role === 'organizer' ? 'myEvents' : 'adminEvents');
-  } catch (e) {
-    errEl.textContent = e.message; errEl.classList.add('show');
-    btn.disabled = false; btn.textContent = editingEventId ? 'Save Changes' : 'Create Event';
+    loadPage(currentUser.role==='organizer'?'myEvents':'adminEvents');
+  } catch(e) {
+    errEl.textContent=e.message; errEl.classList.add('show');
+    btn.disabled=false; btn.innerHTML=editingEventId?'Save Changes':'Create Event';
   }
 }
 
 async function deleteEvent(id) {
   if (!confirm('Delete this event? This cannot be undone.')) return;
-  try {
-    await api(`/events/${id}`, { method: 'DELETE' });
-    showNotif('Event deleted', 'inf');
-    loadPage(currentUser.role === 'organizer' ? 'myEvents' : 'adminEvents');
-  } catch (e) { showNotif(e.message, 'err'); }
+  try { await api(`/events/${id}`,{method:'DELETE'}); showNotif('Event deleted','inf'); loadPage(currentUser.role==='organizer'?'myEvents':'adminEvents'); }
+  catch(e) { showNotif(e.message,'err'); }
 }
 
-// ══════════════════ FEEDBACK ══════════════════
-
-function openFeedback(eid, title) {
-  currentFbEid = eid; selectedRating = 0;
-  document.getElementById('fbEvName').textContent = title;
-  document.getElementById('fbComment').value = '';
-  setRating(0);
-  const btn = document.getElementById('fbBtn');
-  btn.disabled = false; btn.textContent = 'Submit Feedback';
+// ══ FEEDBACK ══
+function openFeedback(eid,title) {
+  currentFbEid=eid; selectedRating=0;
+  document.getElementById('fbEvName').textContent=title;
+  document.getElementById('fbComment').value=''; setRating(0);
+  const btn=document.getElementById('fbBtn'); btn.disabled=false; btn.textContent='Submit Feedback';
   openModal('fbModal');
 }
 
 function setRating(val) {
-  selectedRating = val;
-  document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('lit', i < val));
+  selectedRating=val;
+  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('lit',i<val));
 }
 
 async function submitFeedback() {
-  if (!selectedRating) { showNotif('Please select a rating', 'err'); return; }
-  const comment = document.getElementById('fbComment').value.trim();
-  const btn = document.getElementById('fbBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Submitting…';
+  if (!selectedRating){showNotif('Please select a rating','err');return;}
+  const comment=document.getElementById('fbComment').value.trim();
+  const btn=document.getElementById('fbBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Submitting…';
   try {
-    const d = await api(`/events/${currentFbEid}/feedback`, { method: 'POST', body: JSON.stringify({ rating: selectedRating, comment }) });
-    closeModal('fbModal'); showNotif('⭐ ' + d.message);
+    const d=await api(`/events/${currentFbEid}/feedback`,{method:'POST',body:JSON.stringify({rating:selectedRating,comment})});
+    closeModal('fbModal'); showNotif('⭐ '+d.message);
     loadPage('myFeedback');
-  } catch (e) {
-    showNotif(e.message, 'err');
-    btn.disabled = false; btn.textContent = 'Submit Feedback';
-  }
+  } catch(e) { showNotif(e.message,'err'); btn.disabled=false; btn.textContent='Submit Feedback'; }
 }
 
-// ══════════════════ UTILS ══════════════════
+// ══ UTILS ══
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function showNotif(msg, type = '') {
-  const n = document.getElementById('notif');
-  n.textContent = msg;
-  n.className = 'notif' + (type==='err'?' err':type==='inf'?' inf':'');
+function showNotif(msg,type='') {
+  const n=document.getElementById('notif');
+  n.innerHTML=(type==='err'?'<i class="fa-solid fa-circle-exclamation"></i>':type==='inf'?'<i class="fa-solid fa-circle-info"></i>':'<i class="fa-solid fa-circle-check"></i>')+' '+msg;
+  n.className='notif'+(type==='err'?' err':type==='inf'?' inf':'');
   n.classList.add('show');
   clearTimeout(n._t);
-  n._t = setTimeout(() => n.classList.remove('show'), 4500);
+  n._t=setTimeout(()=>n.classList.remove('show'),4500);
 }
 
-// esc for innerHTML display
-function esc(s) { 
-  return String(s||'')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); 
-}
-// esc2 for use in JS string attributes (single-quote safe)
-function esc2(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function esc2(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 
-document.querySelectorAll('.mov').forEach(m => {
-  m.addEventListener('click', e => { 
-    if (e.target === m) { 
-      if (m.id === 'qrScanModal') closeScanner();
-      else m.classList.remove('open'); 
-    } 
+document.querySelectorAll('.mov').forEach(m=>{
+  m.addEventListener('click',e=>{
+    if(e.target===m){if(m.id==='qrScanModal')closeScanner();else m.classList.remove('open');}
   });
 });
 
-// ══════════════════ BOOT — Session restore ══════════════════
-(async function boot() {
+// ══ BOOT ══
+(async function boot(){
   if (!token) return;
   try {
-    const b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-    const payload = JSON.parse(atob(b64.padEnd(b64.length + (4 - b64.length % 4) % 4, '=')));
-    if (payload.exp && Date.now() > payload.exp) throw new Error('expired');
-
-    // Always fetch fresh user data from server to get correct name
-    try {
-      currentUser = await api('/me');
-      localStorage.setItem('vce_user', JSON.stringify(currentUser));
-    } catch {
-      // Fallback to cached user
-      const stored = localStorage.getItem('vce_user');
-      if (stored) {
-        currentUser = JSON.parse(stored);
-      } else {
-        currentUser = { id: payload.id, role: payload.role, name: 'User', email: '', branch: 'CSE' };
-      }
-    }
-
+    const b64=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const payload=JSON.parse(atob(b64.padEnd(b64.length+(4-b64.length%4)%4,'=')));
+    if (payload.exp&&Date.now()>payload.exp) throw new Error('expired');
+    try { currentUser=await api('/me'); localStorage.setItem('vce_user',JSON.stringify(currentUser)); }
+    catch { const stored=localStorage.getItem('vce_user'); if(stored){currentUser=JSON.parse(stored);}else{currentUser={id:payload.id,role:payload.role,name:'User',email:'',branch:'CSE'};} }
     if (!currentUser?.role) throw new Error('no role');
     enterApp();
-  } catch (e) {
-    token = null;
-    localStorage.removeItem('vce_token');
-    localStorage.removeItem('vce_user');
-  }
+  } catch(e){ token=null; localStorage.removeItem('vce_token'); localStorage.removeItem('vce_user'); }
 })();
 </script>
 </body>

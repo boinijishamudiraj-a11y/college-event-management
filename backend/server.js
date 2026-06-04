@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { db, hashPassword } = require('./db');
 const { sign, verify, authMiddleware } = require('./auth');
 
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 
 // ─── MINI ROUTER HELPERS ─────────────────────────────────────────────────────
 function readBody(req) {
@@ -32,17 +32,16 @@ function send(res, status, data) {
   res.end(body);
 }
 
-const ok      = (res, d)        => send(res, 200, d);
-const created = (res, d)        => send(res, 201, d);
-const err     = (res, msg, s=400) => send(res, s, { error: msg });
-const unauth  = res             => err(res, 'Unauthorized', 401);
-const notFound = res            => err(res, 'Not found', 404);
+const ok       = (res, d)         => send(res, 200, d);
+const created  = (res, d)         => send(res, 201, d);
+const err      = (res, msg, s=400) => send(res, s, { error: msg });
+const unauth   = res              => err(res, 'Unauthorized', 401);
+const notFound = res              => err(res, 'Not found', 404);
 
 // ─── SIGN SHORT-LIVED QR TOKENS ──────────────────────────────────────────────
 const QR_SECRET = process.env.QR_SECRET || 'vce_qr_secret_2025';
 
 function signQR(eventId) {
-  // Token encodes event id + today's date (UTC) so it's only valid today
   const today = new Date().toISOString().slice(0, 10);
   const payload = `${eventId}:${today}`;
   const sig = crypto.createHmac('sha256', QR_SECRET).update(payload).digest('hex').slice(0, 16);
@@ -50,11 +49,38 @@ function signQR(eventId) {
 }
 
 function verifyQR(token, eventId) {
-  const today = new Date().toISOString().slice(0, 10);
-  const expected = signQR(eventId); // will use today internally
-  // constant-time compare
+  const expected = signQR(eventId);
   if (token.length !== expected.length) return false;
   return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+}
+
+// ─── HELPER: promote waitlisted students up to available capacity ─────────────
+function promoteWaitlisted(eventId) {
+  const event = db.prepare('SELECT capacity FROM events WHERE id=?').get(eventId);
+  if (!event) return;
+  const regCount = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(eventId).c;
+  const slots = event.capacity - regCount;
+  if (slots <= 0) return;
+  const waitlisted = db
+    .prepare("SELECT id FROM registrations WHERE event_id=? AND status='waitlisted' ORDER BY created_at LIMIT ?")
+    .all(eventId, slots);
+  for (const row of waitlisted) {
+    db.prepare("UPDATE registrations SET status='registered' WHERE id=?").run(row.id);
+  }
+  return waitlisted.length; // number promoted
+}
+
+// ─── HELPER: delete past events and their registrations/feedback ──────────────
+function purgePastEvents() {
+  const today = new Date().toISOString().slice(0, 10);
+  // Find events whose date is strictly before today
+  const past = db.prepare("SELECT id FROM events WHERE date < ?").all(today);
+  for (const { id } of past) {
+    db.prepare('DELETE FROM feedback WHERE event_id=?').run(id);
+    db.prepare('DELETE FROM registrations WHERE event_id=?').run(id);
+    db.prepare('DELETE FROM events WHERE id=?').run(id);
+  }
+  return past.length;
 }
 
 // ─── MAIN ROUTER ─────────────────────────────────────────────────────────────
@@ -107,7 +133,7 @@ async function router(req, res) {
   const userId   = payload.id;
   const userRole = payload.role;
 
-  // ── GET /api/me ── fresh user data for session restore ───────────────────
+  // ── GET /api/me ───────────────────────────────────────────────────────────
   if (method === 'GET' && pathname === '/api/me') {
     const user = db
       .prepare('SELECT id,name,email,role,branch,year FROM users WHERE id=?')
@@ -118,10 +144,13 @@ async function router(req, res) {
 
   // ── EVENTS ───────────────────────────────────────────────────────────────
   if (method === 'GET' && pathname === '/api/events') {
-    const cat  = query.category;
+    const today = new Date().toISOString().slice(0, 10);
+    const cat   = query.category;
+
+    // FIX 1: Only return events on today or in the future
     const rows = cat && cat !== 'All'
-      ? db.prepare('SELECT * FROM events WHERE category=? ORDER BY date').all(cat)
-      : db.prepare('SELECT * FROM events ORDER BY date').all();
+      ? db.prepare('SELECT * FROM events WHERE category=? AND date >= ? ORDER BY date').all(cat, today)
+      : db.prepare('SELECT * FROM events WHERE date >= ? ORDER BY date').all(today);
 
     const events = rows.map(e => {
       const regCount  = db.prepare("SELECT COUNT(*) as c FROM registrations WHERE event_id=? AND status='registered'").get(e.id).c;
@@ -155,6 +184,11 @@ async function router(req, res) {
     if (userRole !== 'organizer' && userRole !== 'admin') return err(res, 'Forbidden', 403);
     const { title, description, category, date, time, venue, capacity, branch = 'All' } = await readBody(req);
     if (!title || !category || !date || !venue || !capacity) return err(res, 'Missing required fields');
+
+    // FIX 1: Prevent creating events in the past
+    const today = new Date().toISOString().slice(0, 10);
+    if (date < today) return err(res, 'Event date cannot be in the past');
+
     const r = db
       .prepare('INSERT INTO events(title,description,category,date,time,venue,capacity,branch,organizer_id) VALUES(?,?,?,?,?,?,?,?,?)')
       .run(title, description || '', category, date, time || '', venue, +capacity, branch, userId);
@@ -169,10 +203,15 @@ async function router(req, res) {
     if (!ev) return notFound(res);
     const { title, description, category, date, time, venue, capacity, branch = 'All' } = await readBody(req);
     if (!title || !category || !date || !venue || !capacity) return err(res, 'Missing required fields');
+
     db.prepare('UPDATE events SET title=?,description=?,category=?,date=?,time=?,venue=?,capacity=?,branch=? WHERE id=?')
       .run(title, description || '', category, date, time || '', venue, +capacity, branch, eid);
+
+    // FIX 2: After capacity change, promote waitlisted students to fill new slots
+    const promoted = promoteWaitlisted(eid);
+
     const updated = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
-    return ok(res, updated);
+    return ok(res, { ...updated, promoted_count: promoted });
   }
 
   if (method === 'DELETE' && pathname.match(/^\/api\/events\/\d+$/)) {
@@ -189,6 +228,10 @@ async function router(req, res) {
     const eid   = +pathname.split('/')[3];
     const event = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
     if (!event) return notFound(res);
+
+    // FIX 1: Disallow registration for past events
+    const today = new Date().toISOString().slice(0, 10);
+    if (event.date < today) return err(res, 'Cannot register for a past event');
 
     const existing = db.prepare('SELECT * FROM registrations WHERE user_id=? AND event_id=?').get(userId, eid);
     if (existing && existing.status !== 'cancelled') return err(res, 'Already registered or waitlisted');
@@ -212,14 +255,13 @@ async function router(req, res) {
     const reg = db.prepare("SELECT * FROM registrations WHERE user_id=? AND event_id=? AND status='registered'").get(userId, eid);
     if (!reg) return err(res, 'Registration not found');
     db.prepare("UPDATE registrations SET status='cancelled' WHERE user_id=? AND event_id=?").run(userId, eid);
-    // Promote next waitlisted
-    const next = db.prepare("SELECT * FROM registrations WHERE event_id=? AND status='waitlisted' ORDER BY created_at LIMIT 1").get(eid);
-    if (next) db.prepare("UPDATE registrations SET status='registered' WHERE id=?").run(next.id);
+    // FIX 2: reuse promoteWaitlisted to fill the freed slot
+    promoteWaitlisted(eid);
+    const next = db.prepare("SELECT * FROM registrations WHERE event_id=? AND status='registered' ORDER BY created_at DESC LIMIT 1").get(eid);
     return ok(res, { message: 'Registration cancelled' + (next ? '. Next waitlisted student promoted.' : '') });
   }
 
-  // ── QR TOKEN (organizer/admin generate, student scans) ───────────────────
-  // GET /api/events/:id/qr-token  →  returns today's token for that event
+  // ── QR TOKEN ──────────────────────────────────────────────────────────────
   if (method === 'GET' && pathname.match(/^\/api\/events\/\d+\/qr-token$/)) {
     if (userRole !== 'organizer' && userRole !== 'admin') return err(res, 'Forbidden', 403);
     const eid = +pathname.split('/')[3];
@@ -230,25 +272,18 @@ async function router(req, res) {
   }
 
   // ── ATTENDANCE ────────────────────────────────────────────────────────────
-  // POST /api/events/:id/attend  { qr_token: "..." }
-  // Students call this after scanning the QR. Checks:
-  //   1. User has an active registration
-  //   2. QR token is valid (implicitly checks today == event date OR token date)
-  //   3. Not already attended
   if (method === 'POST' && pathname.match(/^\/api\/events\/\d+\/attend$/)) {
     const eid   = +pathname.split('/')[3];
     const event = db.prepare('SELECT * FROM events WHERE id=?').get(eid);
     if (!event) return notFound(res);
 
-    // Date check: event must be today (comparing date strings YYYY-MM-DD)
     const today     = new Date().toISOString().slice(0, 10);
-    const eventDate = event.date; // already stored as YYYY-MM-DD
+    const eventDate = event.date;
 
     if (eventDate !== today) {
       return err(res, `Attendance can only be marked on the event date (${eventDate}). Today is ${today}.`);
     }
 
-    // QR token validation
     const { qr_token } = await readBody(req);
     if (!qr_token) return err(res, 'QR token is required');
     if (!verifyQR(qr_token, eid)) return err(res, 'Invalid or expired QR code. Please scan again.');
@@ -385,12 +420,33 @@ async function router(req, res) {
     return ok(res, rows);
   }
 
+  // ── ADMIN: manually trigger past-event purge ──────────────────────────────
+  if (method === 'DELETE' && pathname === '/api/admin/purge-past-events') {
+    if (userRole !== 'admin') return err(res, 'Forbidden', 403);
+    const count = purgePastEvents();
+    return ok(res, { message: `${count} past event(s) deleted` });
+  }
+
   if (method === 'GET' && pathname === '/api/categories') {
     return ok(res, db.prepare('SELECT name FROM categories').all().map(r => r.name));
   }
 
   notFound(res);
 }
+
+// ─── AUTO-PURGE PAST EVENTS ON STARTUP + DAILY ───────────────────────────────
+purgePastEvents();
+// Re-run every day at midnight UTC
+setInterval(() => {
+  const now = new Date();
+  const msUntilMidnight = (
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now
+  );
+  setTimeout(() => {
+    purgePastEvents();
+    setInterval(purgePastEvents, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+}, 0);
 
 // ─── START ───────────────────────────────────────────────────────────────────
 const server = http.createServer(router);

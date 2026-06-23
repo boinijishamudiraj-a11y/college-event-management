@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { db, hashPassword } = require('./db');
 const { sign, verify, authMiddleware } = require('./auth');
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // ─── MINI ROUTER HELPERS ─────────────────────────────────────────────────────
 function readBody(req) {
